@@ -7,7 +7,7 @@ import (
 	"os/exec"
 )
 
-func discoverGateWayUsingIp() (ip net.IP, err error) {
+func discoverGatewayUsingIp() (ip net.IP, err error) {
 	routeCmd := exec.Command("ip", "route", "show")
 	stdOut, err := routeCmd.StdoutPipe()
 	if err != nil {
@@ -36,7 +36,7 @@ func discoverGateWayUsingIp() (ip net.IP, err error) {
 	return
 }
 
-func discoverGateWayUsingRoute() (ip net.IP, err error) {
+func discoverGatewayUsingRoute() (ip net.IP, err error) {
 	routeCmd := exec.Command("route", "-n")
 	stdOut, err := routeCmd.StdoutPipe()
 	if err != nil {
@@ -67,9 +67,9 @@ func discoverGateWayUsingRoute() (ip net.IP, err error) {
 }
 
 func DiscoverGateway() (ip net.IP, err error) {
-	ip, err = discoverGateWayUsingRoute()
+	ip, err = discoverGatewayUsingRoute()
 	if err != nil {
-		ip, err = discoverGateWayUsingIp()
+		ip, err = discoverGatewayUsingIp()
 	}
 	return
 }
