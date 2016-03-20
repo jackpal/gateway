@@ -8,7 +8,7 @@ import (
 )
 
 func DiscoverGateway() (ip net.IP, err error) {
-	routeCmd := exec.Command("route", "-n", "get", "0.0.0.0")
+	routeCmd := exec.Command("/sbin/route", "-n", "get", "0.0.0.0")
 	stdOut, err := routeCmd.StdoutPipe()
 	if err != nil {
 		return
