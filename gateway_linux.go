@@ -34,7 +34,7 @@ func discoverGatewayUsingIp() (ip net.IP, err error) {
 }
 
 func discoverGatewayUsingRoute() (ip net.IP, err error) {
-	routeCmd := exec.Command("route", "-n")
+	routeCmd := exec.Command("/sbin/route", "-n")
 	stdOut, err := routeCmd.StdoutPipe()
 	if err != nil {
 		return
@@ -43,7 +43,7 @@ func discoverGatewayUsingRoute() (ip net.IP, err error) {
 		return
 	}
 
-	// Linux route out format is always like this:
+	// Linux /sbin/route out format is always like this:
 	// Kernel IP routing table
 	// Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
 	// 0.0.0.0         192.168.1.1     0.0.0.0         UG    0      0        0 eth0
@@ -55,6 +55,7 @@ func discoverGatewayUsingRoute() (ip net.IP, err error) {
 		}
 	}
 
+	stdOut.Close()
 	err = routeCmd.Wait()
 	return
 }
