@@ -8,7 +8,7 @@ import (
 )
 
 func discoverGatewayUsingIp() (ip net.IP, err error) {
-	routeCmd := exec.Command("ip", "route", "show")
+	routeCmd := exec.Command("/usr/bin/ip", "route", "show")
 	stdOut, err := routeCmd.StdoutPipe()
 	if err != nil {
 		return
@@ -17,7 +17,7 @@ func discoverGatewayUsingIp() (ip net.IP, err error) {
 		return
 	}
 
-	// Linux 'ip route show' format looks like this:
+	// Linux '/usr/bin/ip route show' format looks like this:
 	// default via 192.168.178.1 dev wlp3s0  metric 303
 	// 192.168.178.0/24 dev wlp3s0  proto kernel  scope link  src 192.168.178.76  metric 303
 	for cmdScanner := bufio.NewScanner(stdOut); ; cmdScanner.Scan() {
