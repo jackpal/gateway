@@ -2,6 +2,9 @@
 
 A simple library for discovering the IP address of the default gateway.
 
+
+[![Build Status](https://travis-ci.org/jackpal/gateway.svg)](https://travis-ci.org/jackpal/gateway)
+
 Provides implementations for:
 
 + FreeBSD
