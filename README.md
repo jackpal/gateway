@@ -1,7 +1,15 @@
 # gateway
 
-A very simple library for discovering the IP address of the local LAN gateway.
+A simple library for discovering the IP address of the default gateway.
 
-Provides implementations for Linux, OS X (Darwin), Windows, FreeBSD and Solaris.
+Provides implementations for:
+
+    + FreeBSD
+    + Linux
+    + OS X (Darwin)
+    + Solaris
+    + Windows
+
+Other platforms use an implementation that always returns an error.
 
 Pull requests for other OSs happily considered!
