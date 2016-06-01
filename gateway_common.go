@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"net"
+	"strings"
 )
 
 var errNoGateway = errors.New("no gateway found")
@@ -34,5 +35,37 @@ func parseRoutePrint(output []byte) (net.IP, error) {
 			return ip, nil
 		}
 	}
+	return nil, errNoGateway
+}
+
+func parseNetstat(output []byte) (net.IP, error) {
+	// netstat -rn produces the following on FreeBSD:
+	// Routing tables
+	//
+	// Internet:
+	// Destination        Gateway            Flags      Netif Expire
+	// default            10.88.88.2         UGS         em0
+	// 10.88.88.0/24      link#1             U           em0
+	// 10.88.88.148       link#1             UHS         lo0
+	// 127.0.0.1          link#2             UH          lo0
+	//
+	// Internet6:
+	// Destination                       Gateway                       Flags      Netif Expire
+	// ::/96                             ::1                           UGRS        lo0
+	// ::1                               link#2                        UH          lo0
+	// ::ffff:0.0.0.0/96                 ::1                           UGRS        lo0
+	// fe80::/10                         ::1                           UGRS        lo0
+	// ...
+	outputLines := strings.Split(string(output), "\n")
+	for _, line := range outputLines {
+		fields := strings.Fields(line)
+		if len(fields) >= 2 && fields[0] == "default" {
+			ip := net.ParseIP(fields[1])
+			if ip != nil {
+				return ip, nil
+			}
+		}
+	}
+
 	return nil, errNoGateway
 }
