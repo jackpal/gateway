@@ -30,6 +30,7 @@ func DiscoverGateway() (ip net.IP, err error) {
 		}
 	}
 
+	stdOut.Close()
 	err = routeCmd.Wait()
 	return
 }

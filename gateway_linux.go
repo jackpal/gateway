@@ -28,6 +28,7 @@ func discoverGatewayUsingIp() (ip net.IP, err error) {
 		}
 	}
 
+	stdOut.Close()
 	err = routeCmd.Wait()
 	return
 }
