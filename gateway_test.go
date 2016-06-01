@@ -1,18 +1,17 @@
 package gateway
 
-import "testing"
+import (
+	"net"
+	"testing"
+)
 
-func TestGateway(t *testing.T) {
-	ip, err := DiscoverGateway()
-	if err != nil {
-		t.Errorf("DiscoverGateway() = %v,%v", ip, err)
-	} else {
-		t.Logf("ip %v\n", ip)
-	}
-
+type testcase struct {
+	output  []byte
+	ok      bool
+	gateway string
 }
 
-func TestParseRoutePrint(t *testing.T) {
+func TestParseWindowsRoutePrint(t *testing.T) {
 	correctData := []byte(`
 IPv4 Route Table
 ===========================================================================
@@ -32,41 +31,139 @@ IPv4 Route Table
 ===========================================================================
 Active Routes:
 `)
-	badRoute := []byte(`
+	badRoute1 := []byte(`
 IPv4 Route Table
 ===========================================================================
 Active Routes:
 ===========================================================================
 Persistent Routes:
 `)
+	badRoute2 := []byte(`
+IPv4 Route Table
+===========================================================================
+Active Routes:
+Network Destination        Netmask          Gateway       Interface  Metric
+          0.0.0.0          0.0.0.0          foo           10.88.88.149     10
+===========================================================================
+Persistent Routes:
+`)
 
-	testcases := []struct {
-		output  []byte
-		ok      bool
-		gateway string
-	}{
+	testcases := []testcase{
 		{correctData, true, "10.88.88.2"},
+		{randomData, false, ""},
+		{noRoute, false, ""},
+		{badRoute1, false, ""},
+		{badRoute2, false, ""},
+	}
+
+	test(t, testcases, parseWindowsRoutePrint)
+}
+
+func TestParseLinuxIPRoutePrint(t *testing.T) {
+	correctData := []byte(`
+default via 192.168.178.1 dev wlp3s0  metric 303
+192.168.178.0/24 dev wlp3s0  proto kernel  scope link  src 192.168.178.76  metric 303
+`)
+	randomData := []byte(`
+test
+Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+sed do eiusmod tempor incididunt ut labore et dolore magna
+aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+`)
+	noRoute := []byte(`
+192.168.178.0/24 dev wlp3s0  proto kernel  scope link  src 192.168.178.76  metric 303
+`)
+	badRoute := []byte(`
+default via foo dev wlp3s0  metric 303
+192.168.178.0/24 dev wlp3s0  proto kernel  scope link  src 192.168.178.76  metric 303
+`)
+
+	testcases := []testcase{
+		{correctData, true, "192.168.178.1"},
 		{randomData, false, ""},
 		{noRoute, false, ""},
 		{badRoute, false, ""},
 	}
 
-	for i, tc := range testcases {
-		net, err := parseRoutePrint(tc.output)
-		if tc.ok {
-			if err != nil {
-				t.Errorf("Unexpected error in test #%d: %v", i, err)
-			}
-			if net.String() != tc.gateway {
-				t.Errorf("Unexpected gateway address %v != %s", net, tc.gateway)
-			}
-		} else if err == nil {
-			t.Errorf("Unexpected nil error in test #%d", i)
-		}
-	}
+	test(t, testcases, parseLinuxIPRoute)
 }
 
-func TestParseNetstat(t *testing.T) {
+func TestParseLinuxRoutePrint(t *testing.T) {
+	correctData := []byte(`
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         192.168.1.1     0.0.0.0         UG    0      0        0 eth0
+`)
+	randomData := []byte(`
+test
+Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+sed do eiusmod tempor incididunt ut labore et dolore magna
+aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+`)
+	noRoute := []byte(`
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+`)
+	badRoute := []byte(`
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         foo     0.0.0.0         UG    0      0        0 eth0
+`)
+
+	testcases := []testcase{
+		{correctData, true, "192.168.1.1"},
+		{randomData, false, ""},
+		{noRoute, false, ""},
+		{badRoute, false, ""},
+	}
+
+	test(t, testcases, parseLinuxRoute)
+}
+
+func TestParseDarwinRouteGet(t *testing.T) {
+	correctData := []byte(`
+   route to: 0.0.0.0
+destination: default
+       mask: default
+    gateway: 172.16.32.1
+  interface: en0
+      flags: <UP,GATEWAY,DONE,STATIC,PRCLONING>
+ recvpipe  sendpipe  ssthresh  rtt,msec    rttvar  hopcount      mtu     expire
+       0         0         0         0         0         0      1500         0
+`)
+	randomData := []byte(`
+test
+Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+sed do eiusmod tempor incididunt ut labore et dolore magna
+aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+`)
+	noRoute := []byte(`
+   route to: 0.0.0.0
+destination: default
+       mask: default
+`)
+	badRoute := []byte(`
+   route to: 0.0.0.0
+destination: default
+       mask: default
+    gateway: foo
+  interface: en0
+      flags: <UP,GATEWAY,DONE,STATIC,PRCLONING>
+ recvpipe  sendpipe  ssthresh  rtt,msec    rttvar  hopcount      mtu     expire
+       0         0         0         0         0         0      1500         0
+`)
+
+	testcases := []testcase{
+		{correctData, true, "172.16.32.1"},
+		{randomData, false, ""},
+		{noRoute, false, ""},
+		{badRoute, false, ""},
+	}
+
+	test(t, testcases, parseDarwinRouteGet)
+}
+
+func TestParseBSDSolarisNetstat(t *testing.T) {
 	correctDataFreeBSD := []byte(`
 Routing tables
 
@@ -120,11 +217,7 @@ default            foo                UGS         em0
 127.0.0.1          link#2             UH          lo0
 `)
 
-	testcases := []struct {
-		output  []byte
-		ok      bool
-		gateway string
-	}{
+	testcases := []testcase{
 		{correctDataFreeBSD, true, "10.88.88.2"},
 		{correctDataSolaris, true, "172.16.32.1"},
 		{randomData, false, ""},
@@ -132,8 +225,12 @@ default            foo                UGS         em0
 		{badRoute, false, ""},
 	}
 
+	test(t, testcases, parseBSDSolarisNetstat)
+}
+
+func test(t *testing.T, testcases []testcase, fn func([]byte) (net.IP, error)) {
 	for i, tc := range testcases {
-		net, err := parseNetstat(tc.output)
+		net, err := fn(tc.output)
 		if tc.ok {
 			if err != nil {
 				t.Errorf("Unexpected error in test #%d: %v", i, err)

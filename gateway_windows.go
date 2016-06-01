@@ -12,5 +12,5 @@ func DiscoverGateway() (ip net.IP, err error) {
 		return nil, err
 	}
 
-	return parseRoutePrint(output)
+	return parseWindowsRoutePrint(output)
 }
