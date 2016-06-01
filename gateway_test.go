@@ -6,7 +6,10 @@ func TestGateway(t *testing.T) {
 	ip, err := DiscoverGateway()
 	if err != nil {
 		t.Errorf("DiscoverGateway() = %v,%v", ip, err)
+	} else {
+		t.Logf("ip %v\n", ip)
 	}
+
 }
 
 func TestParseRoutePrint(t *testing.T) {
