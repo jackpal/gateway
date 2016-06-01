@@ -1,7 +1,6 @@
 package gateway
 
 import (
-	"bytes"
 	"errors"
 	"net"
 	"strings"
@@ -9,7 +8,7 @@ import (
 
 var errNoGateway = errors.New("no gateway found")
 
-func parseRoutePrint(output []byte) (net.IP, error) {
+func parseWindowsRoutePrint(output []byte) (net.IP, error) {
 	// Windows route output format is always like this:
 	// ===========================================================================
 	// Active Routes:
@@ -19,26 +18,85 @@ func parseRoutePrint(output []byte) (net.IP, error) {
 	// I'm trying to pick the active route,
 	// then jump 2 lines and pick the third IP
 	// Not using regex because output is quite standard from Windows XP to 8 (NEEDS TESTING)
-	outputLines := bytes.Split(output, []byte("\n"))
-	for idx, line := range outputLines {
-		if bytes.Contains(line, []byte("Active Routes:")) {
-			if len(outputLines) <= idx+2 {
+	lines := strings.Split(string(output), "\n")
+	for idx, line := range lines {
+		if strings.HasPrefix(line, "Active Routes:") {
+			if len(lines) <= idx+2 {
 				return nil, errNoGateway
 			}
 
-			ipFields := bytes.Fields(outputLines[idx+2])
-			if len(ipFields) < 3 {
+			fields := strings.Fields(lines[idx+2])
+			if len(fields) < 3 {
 				return nil, errNoGateway
 			}
 
-			ip := net.ParseIP(string(ipFields[2]))
-			return ip, nil
+			ip := net.ParseIP(fields[2])
+			if ip != nil {
+				return ip, nil
+			}
 		}
 	}
 	return nil, errNoGateway
 }
 
-func parseNetstat(output []byte) (net.IP, error) {
+func parseLinuxIPRoute(output []byte) (net.IP, error) {
+	// Linux '/usr/bin/ip route show' format looks like this:
+	// default via 192.168.178.1 dev wlp3s0  metric 303
+	// 192.168.178.0/24 dev wlp3s0  proto kernel  scope link  src 192.168.178.76  metric 303
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		if len(fields) >= 3 && fields[0] == "default" {
+			ip := net.ParseIP(fields[2])
+			if ip != nil {
+				return ip, nil
+			}
+		}
+	}
+
+	return nil, errNoGateway
+}
+
+func parseLinuxRoute(output []byte) (net.IP, error) {
+	// Linux route out format is always like this:
+	// Kernel IP routing table
+	// Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+	// 0.0.0.0         192.168.1.1     0.0.0.0         UG    0      0        0 eth0
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		if len(fields) >= 2 && fields[0] == "0.0.0.0" {
+			ip := net.ParseIP(fields[1])
+			if ip != nil {
+				return ip, nil
+			}
+		}
+	}
+
+	return nil, errNoGateway
+}
+
+func parseDarwinRouteGet(output []byte) (net.IP, error) {
+	// Darwin route out format is always like this:
+	//    route to: default
+	// destination: default
+	//        mask: default
+	//     gateway: 192.168.1.1
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		if len(fields) >= 2 && fields[0] == "gateway:" {
+			ip := net.ParseIP(fields[1])
+			if ip != nil {
+				return ip, nil
+			}
+		}
+	}
+
+	return nil, errNoGateway
+}
+
+func parseBSDSolarisNetstat(output []byte) (net.IP, error) {
 	// netstat -rn produces the following on FreeBSD:
 	// Routing tables
 	//
