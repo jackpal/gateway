@@ -24,7 +24,7 @@ func discoverGatewayUsingIp() (net.IP, error) {
 }
 
 func discoverGatewayUsingRoute() (net.IP, error) {
-	routeCmd := exec.Command("route", "-n")
+	routeCmd := exec.Command("/usr/bin/route", "-n")
 	output, err := routeCmd.CombinedOutput()
 	if err != nil {
 		return nil, err
