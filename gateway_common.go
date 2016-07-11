@@ -76,6 +76,26 @@ func parseLinuxRoute(output []byte) (net.IP, error) {
 	return nil, errNoGateway
 }
 
+func parseLinuxPing(output []byte) (net.IP, error) {
+	// PING 198.41.0.4 (198.41.0.4) 56(84) bytes of data.
+	// From 192.168.54.1: icmp_seq=1 Time to live exceeded
+	//
+	// --- 198.41.0.4 ping statistics ---
+	// 1 packets transmitted, 0 received, +1 errors, 100% packet loss, time 0ms
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		if len(fields) >= 3 && fields[0] == "From" {
+			ip := net.ParseIP(strings.TrimRight(fields[1], ":"))
+			if ip != nil {
+				return ip, nil
+			}
+		}
+	}
+
+	return nil, errNoGateway
+}
+
 func parseDarwinRouteGet(output []byte) (net.IP, error) {
 	// Darwin route out format is always like this:
 	//    route to: default
