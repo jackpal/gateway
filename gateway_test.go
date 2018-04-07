@@ -59,7 +59,7 @@ Persistent Routes:
 	test(t, testcases, parseWindowsRoutePrint)
 }
 
-func TestParseLinuxIPRoutePrint(t *testing.T) {
+func TestParseLinuxIPRouteShow(t *testing.T) {
 	correctData := []byte(`
 default via 192.168.178.1 dev wlp3s0  metric 303
 192.168.178.0/24 dev wlp3s0  proto kernel  scope link  src 192.168.178.76  metric 303
@@ -85,7 +85,40 @@ default via foo dev wlp3s0  metric 303
 		{badRoute, false, ""},
 	}
 
-	test(t, testcases, parseLinuxIPRoute)
+	test(t, testcases, parseLinuxIPRouteShow)
+}
+
+func TestParseLinuxIPRouteGet(t *testing.T) {
+	correctData := []byte(`
+8.8.8.8 via 10.0.1.1 dev eth0  src 10.0.1.36  uid 2000
+    cache`)
+	randomData := []byte(`
+test
+Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+sed do eiusmod tempor incididunt ut labore et dolore magna
+aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+`)
+	noRoute := []byte(`
+broadcast 255.255.255.255 dev eth0  src 10.0.1.36  uid 2000
+	cache <local,brd>
+`)
+	badRoute := []byte(`
+local 0.0.0.0 dev lo  src 127.0.0.1  uid 2000
+    cache <local>
+`)
+	errorRoute := []byte(`
+RTNETLINK answers: Invalid argument
+`)
+
+	testcases := []testcase{
+		{correctData, true, "10.0.1.1"},
+		{randomData, false, ""},
+		{noRoute, false, ""},
+		{badRoute, false, ""},
+		{errorRoute, false, ""},
+	}
+
+	test(t, testcases, parseLinuxIPRouteGet)
 }
 
 func TestParseLinuxRoutePrint(t *testing.T) {
@@ -109,12 +142,18 @@ Kernel IP routing table
 Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
 0.0.0.0         foo     0.0.0.0         UG    0      0        0 eth0
 `)
+	missingRoute := []byte(`
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+10.0.1.0        0.0.0.0         255.255.255.0   U     0      0        0 eth0
+`)
 
 	testcases := []testcase{
 		{correctData, true, "192.168.1.1"},
 		{randomData, false, ""},
 		{noRoute, false, ""},
 		{badRoute, false, ""},
+		{missingRoute, false, ""},
 	}
 
 	test(t, testcases, parseLinuxRoute)
