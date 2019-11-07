@@ -59,104 +59,24 @@ Persistent Routes:
 	test(t, testcases, parseWindowsRoutePrint)
 }
 
-func TestParseLinuxIPRouteShow(t *testing.T) {
-	correctData := []byte(`
-default via 192.168.178.1 dev wlp3s0  metric 303
-192.168.178.0/24 dev wlp3s0  proto kernel  scope link  src 192.168.178.76  metric 303
-`)
-	randomData := []byte(`
-test
-Lorem ipsum dolor sit amet, consectetur adipiscing elit,
-sed do eiusmod tempor incididunt ut labore et dolore magna
-aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+func TestParseLinuxProcNetRoute(t *testing.T) {
+	correctData := []byte(`Iface	Destination	Gateway 	Flags	RefCnt	Use	Metric	Mask		MTU	Window	IRTT                                                       
+wlp4s0	00000000	0108A8C0	0003	0	0	600	00000000	0	0	0                                                                           
+wlp4s0	0000FEA9	00000000	0001	0	0	1000	0000FFFF	0	0	0                                                                          
+docker0	000011AC	00000000	0001	0	0	0	0000FFFF	0	0	0                                                                            
+docker_gwbridge	000012AC	00000000	0001	0	0	0	0000FFFF	0	0	0                                                                    
+wlp4s0	0008A8C0	00000000	0001	0	0	600	00FFFFFF	0	0	0                                                                           
 `)
 	noRoute := []byte(`
-192.168.178.0/24 dev wlp3s0  proto kernel  scope link  src 192.168.178.76  metric 303
-`)
-	badRoute := []byte(`
-default via foo dev wlp3s0  metric 303
-192.168.178.0/24 dev wlp3s0  proto kernel  scope link  src 192.168.178.76  metric 303
+Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask            MTU     Window  IRTT                                                       
 `)
 
 	testcases := []testcase{
-		{correctData, true, "192.168.178.1"},
-		{randomData, false, ""},
+		{correctData, true, "192.168.8.1"},
 		{noRoute, false, ""},
-		{badRoute, false, ""},
 	}
 
-	test(t, testcases, parseLinuxIPRouteShow)
-}
-
-func TestParseLinuxIPRouteGet(t *testing.T) {
-	correctData := []byte(`
-8.8.8.8 via 10.0.1.1 dev eth0  src 10.0.1.36  uid 2000
-    cache`)
-	randomData := []byte(`
-test
-Lorem ipsum dolor sit amet, consectetur adipiscing elit,
-sed do eiusmod tempor incididunt ut labore et dolore magna
-aliqua. Ut enim ad minim veniam, quis nostrud exercitation
-`)
-	noRoute := []byte(`
-broadcast 255.255.255.255 dev eth0  src 10.0.1.36  uid 2000
-	cache <local,brd>
-`)
-	badRoute := []byte(`
-local 0.0.0.0 dev lo  src 127.0.0.1  uid 2000
-    cache <local>
-`)
-	errorRoute := []byte(`
-RTNETLINK answers: Invalid argument
-`)
-
-	testcases := []testcase{
-		{correctData, true, "10.0.1.1"},
-		{randomData, false, ""},
-		{noRoute, false, ""},
-		{badRoute, false, ""},
-		{errorRoute, false, ""},
-	}
-
-	test(t, testcases, parseLinuxIPRouteGet)
-}
-
-func TestParseLinuxRoutePrint(t *testing.T) {
-	correctData := []byte(`
-Kernel IP routing table
-Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
-0.0.0.0         192.168.1.1     0.0.0.0         UG    0      0        0 eth0
-`)
-	randomData := []byte(`
-test
-Lorem ipsum dolor sit amet, consectetur adipiscing elit,
-sed do eiusmod tempor incididunt ut labore et dolore magna
-aliqua. Ut enim ad minim veniam, quis nostrud exercitation
-`)
-	noRoute := []byte(`
-Kernel IP routing table
-Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
-`)
-	badRoute := []byte(`
-Kernel IP routing table
-Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
-0.0.0.0         foo     0.0.0.0         UG    0      0        0 eth0
-`)
-	missingRoute := []byte(`
-Kernel IP routing table
-Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
-10.0.1.0        0.0.0.0         255.255.255.0   U     0      0        0 eth0
-`)
-
-	testcases := []testcase{
-		{correctData, true, "192.168.1.1"},
-		{randomData, false, ""},
-		{noRoute, false, ""},
-		{badRoute, false, ""},
-		{missingRoute, false, ""},
-	}
-
-	test(t, testcases, parseLinuxRoute)
+	test(t, testcases, parseLinuxProcNetRoute)
 }
 
 func TestParseDarwinRouteGet(t *testing.T) {
