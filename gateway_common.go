@@ -15,16 +15,26 @@ var errNoGateway = errors.New("no gateway found")
 func parseWindowsRoutePrint(output []byte) (net.IP, error) {
 	// Windows route output format is always like this:
 	// ===========================================================================
+	// Interface List
+	// 8 ...00 12 3f a7 17 ba ...... Intel(R) PRO/100 VE Network Connection
+	// 1 ........................... Software Loopback Interface 1
+	// ===========================================================================
+	// IPv4 Route Table
+	// ===========================================================================
 	// Active Routes:
 	// Network Destination        Netmask          Gateway       Interface  Metric
 	//           0.0.0.0          0.0.0.0      192.168.1.1    192.168.1.100     20
 	// ===========================================================================
+	//
+	// Windows commands are localized, so we can't just look for "Active Routes:" string
 	// I'm trying to pick the active route,
 	// then jump 2 lines and pick the third IP
 	// Not using regex because output is quite standard from Windows XP to 8 (NEEDS TESTING)
 	lines := strings.Split(string(output), "\n")
+	sep := 0
 	for idx, line := range lines {
-		if strings.HasPrefix(line, "Active Routes:") {
+		if sep == 3 {
+			// We just entered the 2nd section containing "Active Routes:"
 			if len(lines) <= idx+2 {
 				return nil, errNoGateway
 			}
@@ -38,6 +48,10 @@ func parseWindowsRoutePrint(output []byte) (net.IP, error) {
 			if ip != nil {
 				return ip, nil
 			}
+		}
+		if strings.HasPrefix(line, "=======") {
+			sep++
+			continue
 		}
 	}
 	return nil, errNoGateway

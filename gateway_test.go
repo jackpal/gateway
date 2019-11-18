@@ -13,6 +13,11 @@ type testcase struct {
 
 func TestParseWindowsRoutePrint(t *testing.T) {
 	correctData := []byte(`
+===========================================================================
+Interface List
+  8 ...00 12 3f a7 17 ba ...... Intel(R) PRO/100 VE Network Connection
+  1 ........................... Software Loopback Interface 1
+===========================================================================
 IPv4 Route Table
 ===========================================================================
 Active Routes:
@@ -21,17 +26,42 @@ Network Destination        Netmask          Gateway       Interface  Metric
 ===========================================================================
 Persistent Routes:
 `)
+	localizedData := []byte(
+`===========================================================================
+Liste d'Interfaces
+ 17...00 28 f8 39 61 6b ......Microsoft Wi-Fi Direct Virtual Adapter
+  1...........................Software Loopback Interface 1
+===========================================================================
+IPv4 Table de routage
+===========================================================================
+Itinéraires actifs :
+Destination réseau    Masque réseau  Adr. passerelle   Adr. interface Métrique
+          0.0.0.0          0.0.0.0      10.88.88.2     10.88.88.149     10
+===========================================================================
+Itinéraires persistants :
+  Aucun
+`)
 	randomData := []byte(`
 Lorem ipsum dolor sit amet, consectetur adipiscing elit,
 sed do eiusmod tempor incididunt ut labore et dolore magna
 aliqua. Ut enim ad minim veniam, quis nostrud exercitation
 `)
 	noRoute := []byte(`
+===========================================================================
+Interface List
+  8 ...00 12 3f a7 17 ba ...... Intel(R) PRO/100 VE Network Connection
+  1 ........................... Software Loopback Interface 1
+===========================================================================
 IPv4 Route Table
 ===========================================================================
 Active Routes:
 `)
 	badRoute1 := []byte(`
+===========================================================================
+Interface List
+  8 ...00 12 3f a7 17 ba ...... Intel(R) PRO/100 VE Network Connection
+  1 ........................... Software Loopback Interface 1
+===========================================================================
 IPv4 Route Table
 ===========================================================================
 Active Routes:
@@ -39,6 +69,11 @@ Active Routes:
 Persistent Routes:
 `)
 	badRoute2 := []byte(`
+===========================================================================
+Interface List
+  8 ...00 12 3f a7 17 ba ...... Intel(R) PRO/100 VE Network Connection
+  1 ........................... Software Loopback Interface 1
+===========================================================================
 IPv4 Route Table
 ===========================================================================
 Active Routes:
@@ -50,6 +85,7 @@ Persistent Routes:
 
 	testcases := []testcase{
 		{correctData, true, "10.88.88.2"},
+		{localizedData, true, "10.88.88.2"},
 		{randomData, false, ""},
 		{noRoute, false, ""},
 		{badRoute1, false, ""},
