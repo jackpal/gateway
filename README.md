@@ -2,6 +2,7 @@
 
 A simple library for discovering the IP address of the default gateway.
 
+Implementation can be found in the `example` directory.
 
 [![Build Status](https://travis-ci.org/jackpal/gateway.svg)](https://travis-ci.org/jackpal/gateway)
 
