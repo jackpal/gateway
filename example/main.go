@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/natethinks/gateway"
+	"github.com/jackpal/gateway"
 	"github.com/opentracing/opentracing-go/log"
 )
 
