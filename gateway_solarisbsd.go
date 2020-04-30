@@ -1,3 +1,5 @@
+// +build solaris freebsd
+
 package gateway
 
 import (

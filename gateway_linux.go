@@ -1,3 +1,5 @@
+// +build linux
+
 package gateway
 
 import (
@@ -7,10 +9,9 @@ import (
 	"os"
 )
 
-
 const (
 	// See http://man7.org/linux/man-pages/man8/route.8.html
-	file  = "/proc/net/route"
+	file = "/proc/net/route"
 )
 
 func DiscoverGateway() (ip net.IP, err error) {
@@ -26,5 +27,3 @@ func DiscoverGateway() (ip net.IP, err error) {
 	}
 	return parseLinuxProcNetRoute(bytes)
 }
-
-
