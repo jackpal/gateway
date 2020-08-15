@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"net"
 	"strconv"
 	"strings"
@@ -57,33 +58,66 @@ func parseWindowsRoutePrint(output []byte) (net.IP, error) {
 	return nil, errNoGateway
 }
 
-
+// parseLinuxProcNetRoute parses the route file located at /proc/net/route
+// and returns the IP address of the default gateway. The default gateway
+// is the one with Destination value of 0.0.0.0.
+//
+// The Linux route file has the following format:
+//
+// $ cat /proc/net/route
+//
+// Iface   Destination Gateway     Flags   RefCnt  Use Metric  Mask
+// eno1    00000000    C900A8C0    0003    0   0   100 00000000    0   00
+// eno1    0000A8C0    00000000    0001    0   0   100 00FFFFFF    0   00
 func parseLinuxProcNetRoute(f []byte) (net.IP, error) {
-	/* /proc/net/route file:
-	   Iface   Destination Gateway     Flags   RefCnt  Use Metric  Mask
-	   eno1    00000000    C900A8C0    0003    0   0   100 00000000    0   00
-	   eno1    0000A8C0    00000000    0001    0   0   100 00FFFFFF    0   00
-	*/
 	const (
-		sep   = "\t" // field separator
-		field = 2    // field containing hex gateway address
+		sep              = "\t" // field separator
+		destinationField = 1    // field containing hex destination address
+		gatewayField     = 2    // field containing hex gateway address
 	)
 	scanner := bufio.NewScanner(bytes.NewReader(f))
+
+	// Skip header line
+	if !scanner.Scan() {
+		return nil, errors.New("Invalid linux route file")
+	}
+
 	for scanner.Scan() {
-		// Skip header line
-		if !scanner.Scan() {
-			return nil, errors.New("Invalid linux route file")
+		row := scanner.Text()
+		tokens := strings.Split(row, sep)
+		if len(tokens) <= gatewayField {
+			return nil, fmt.Errorf("invalid row '%s' in route file", row)
 		}
 
-		// get field containing gateway address
-		tokens := strings.Split(scanner.Text(), sep)
-		if len(tokens) <= field {
-			return nil, errors.New("Invalid linux route file")
+		// Cast hex destination address to int
+		destinationHex := "0x" + tokens[destinationField]
+		destination, err := strconv.ParseInt(destinationHex, 0, 64)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"parsing destination field hex '%s' in row '%s': %w",
+				destinationHex,
+				row,
+				err,
+			)
 		}
-		gatewayHex := "0x" + tokens[field]
+
+		// The default interface is the one that's 0
+		if destination != 0 {
+			continue
+		}
+
+		gatewayHex := "0x" + tokens[gatewayField]
 
 		// cast hex address to uint32
-		d, _ := strconv.ParseInt(gatewayHex, 0, 64)
+		d, err := strconv.ParseInt(gatewayHex, 0, 64)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"parsing default interface address field hex '%s' in row '%s': %w",
+				destinationHex,
+				row,
+				err,
+			)
+		}
 		d32 := uint32(d)
 
 		// make net.IP address from uint32
@@ -93,7 +127,7 @@ func parseLinuxProcNetRoute(f []byte) (net.IP, error) {
 		// format net.IP to dotted ipV4 string
 		return net.IP(ipd32), nil
 	}
-	return nil, errors.New("Failed to parse linux route file")
+	return nil, errors.New("interface with default destination not found")
 }
 
 func parseDarwinRouteGet(output []byte) (net.IP, error) {
