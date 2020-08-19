@@ -27,7 +27,7 @@ Network Destination        Netmask          Gateway       Interface  Metric
 Persistent Routes:
 `)
 	localizedData := []byte(
-`===========================================================================
+		`===========================================================================
 Liste d'Interfaces
  17...00 28 f8 39 61 6b ......Microsoft Wi-Fi Direct Virtual Adapter
   1...........................Software Loopback Interface 1
@@ -97,11 +97,11 @@ Persistent Routes:
 
 func TestParseLinuxProcNetRoute(t *testing.T) {
 	correctData := []byte(`Iface	Destination	Gateway 	Flags	RefCnt	Use	Metric	Mask		MTU	Window	IRTT                                                       
-wlp4s0	00000000	0108A8C0	0003	0	0	600	00000000	0	0	0                                                                           
 wlp4s0	0000FEA9	00000000	0001	0	0	1000	0000FFFF	0	0	0                                                                          
 docker0	000011AC	00000000	0001	0	0	0	0000FFFF	0	0	0                                                                            
 docker_gwbridge	000012AC	00000000	0001	0	0	0	0000FFFF	0	0	0                                                                    
 wlp4s0	0008A8C0	00000000	0001	0	0	600	00FFFFFF	0	0	0                                                                           
+wlp4s0	00000000	0108A8C0	0003	0	0	600	00000000	0	0	0                                                                           
 `)
 	noRoute := []byte(`
 Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask            MTU     Window  IRTT                                                       
