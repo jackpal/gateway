@@ -118,10 +118,6 @@ wlp4s0	00000000	0108A8C0	0003	0	0	600	00000000	0	0	0
 Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask            MTU     Window  IRTT                                                       
 `)
 
-	ifData := []byte(`Iface	Destination	Gateway 	Flags	RefCnt	Use	Metric	Mask		MTU	Window	IRTT                                                       
-eth0	00000000	00000000	0001	0	0	1000	0000FFFF	0	0	0                                                                          
-`)
-
 	testcases := []testcase{
 		{correctData, true, "192.168.8.1"},
 		{noRoute, false, ""},
@@ -129,13 +125,16 @@ eth0	00000000	00000000	0001	0	0	1000	0000FFFF	0	0	0
 
 	test(t, testcases, parseLinuxGatewayIP)
 
-	interfaceTestCases := []testcase{
-		{ifData, true, "192.168.8.238"},
-		{noRoute, false, ""},
-	}
+	// ifData := []byte(`Iface	Destination	Gateway 	Flags	RefCnt	Use	Metric	Mask		MTU	Window	IRTT                                                       
+    // eth0	00000000	00000000	0001	0	0	1000	0000FFFF	0	0	0                                                                          
+    // `)
+	// interfaceTestCases := []testcase{
+	// 	{ifData, true, "192.168.8.238"},
+	// 	{noRoute, false, ""},
+	// }
 
 	// to run interface test in your local computer, change eth0 with your default interface name, and change the expected IP to be your default IP
-	test(t, interfaceTestCases, parseLinuxInterfaceIP)
+	// test(t, interfaceTestCases, parseLinuxInterfaceIP)
 }
 
 func TestParseBSDSolarisNetstat(t *testing.T) {
