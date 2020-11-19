@@ -1,3 +1,5 @@
+// +build solaris
+
 package gateway
 
 import (
@@ -5,7 +7,7 @@ import (
 	"os/exec"
 )
 
-func DiscoverGateway() (ip net.IP, err error) {
+func discoverGatewayOSSpecific() (ip net.IP, err error) {
 	routeCmd := exec.Command("netstat", "-rn")
 	output, err := routeCmd.CombinedOutput()
 	if err != nil {
@@ -13,4 +15,8 @@ func DiscoverGateway() (ip net.IP, err error) {
 	}
 
 	return parseBSDSolarisNetstat(output)
+}
+
+func discoverGatewayInterfaceOSSpecific() (ip net.IP, err error) {
+	return nil, errNotImplemented
 }

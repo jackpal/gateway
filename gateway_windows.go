@@ -1,3 +1,5 @@
+// +build windows
+
 package gateway
 
 import (
@@ -6,7 +8,7 @@ import (
 	"syscall"
 )
 
-func DiscoverGateway() (ip net.IP, err error) {
+func discoverGatewayOSSpecific() (ip net.IP, err error) {
 	routeCmd := exec.Command("route", "print", "0.0.0.0")
 	routeCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	output, err := routeCmd.CombinedOutput()
@@ -14,5 +16,16 @@ func DiscoverGateway() (ip net.IP, err error) {
 		return nil, err
 	}
 
-	return parseWindowsRoutePrint(output)
+	return parseWindowsGatewayIP(output)
+}
+
+func discoverGatewayInterfaceOSSpecific() (ip net.IP, err error) {
+	routeCmd := exec.Command("route", "print", "0.0.0.0")
+	routeCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	output, err := routeCmd.CombinedOutput()
+	if err != nil {
+		return nil, err
+	}
+
+	return parseWindowsInterfaceIP(output)
 }

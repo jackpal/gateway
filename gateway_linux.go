@@ -1,3 +1,5 @@
+// +build linux
+
 package gateway
 
 import (
@@ -7,13 +9,12 @@ import (
 	"os"
 )
 
-
 const (
 	// See http://man7.org/linux/man-pages/man8/route.8.html
-	file  = "/proc/net/route"
+	file = "/proc/net/route"
 )
 
-func DiscoverGateway() (ip net.IP, err error) {
+func discoverGatewayOSSpecific() (ip net.IP, err error) {
 	f, err := os.Open(file)
 	if err != nil {
 		return nil, fmt.Errorf("Can't access %s", file)
@@ -24,7 +25,19 @@ func DiscoverGateway() (ip net.IP, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("Can't read %s", file)
 	}
-	return parseLinuxProcNetRoute(bytes)
+	return parseLinuxGatewayIP(bytes)
 }
 
+func discoverGatewayInterfaceOSSpecific() (ip net.IP, err error) {
+	f, err := os.Open(file)
+	if err != nil {
+		return nil, fmt.Errorf("Can't access %s", file)
+	}
+	defer f.Close()
 
+	bytes, err := ioutil.ReadAll(f)
+	if err != nil {
+		return nil, fmt.Errorf("Can't read %s", file)
+	}
+	return parseLinuxInterfaceIP(bytes)
+}

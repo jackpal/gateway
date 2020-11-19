@@ -3,12 +3,13 @@
 package gateway
 
 import (
-	"fmt"
 	"net"
-	"runtime"
 )
 
-func DiscoverGateway() (ip net.IP, err error) {
-	err = fmt.Errorf("DiscoverGateway not implemented for OS %s", runtime.GOOS)
-	return
+func discoverGatewayOSSpecific() (ip net.IP, err error) {
+	return ip, errNotImplemented
+}
+
+func discoverGatewayInterfaceOSSpecific() (ip net.IP, err error) {
+	return nil, errNotImplemented
 }

@@ -11,7 +11,7 @@ type testcase struct {
 	gateway string
 }
 
-func TestParseWindowsRoutePrint(t *testing.T) {
+func TestParseWindows(t *testing.T) {
 	correctData := []byte(`
 ===========================================================================
 Interface List
@@ -92,10 +92,21 @@ Persistent Routes:
 		{badRoute2, false, ""},
 	}
 
-	test(t, testcases, parseWindowsRoutePrint)
+	test(t, testcases, parseWindowsGatewayIP)
+
+	interfaceTestCases := []testcase{
+		{correctData, true, "10.88.88.149"},
+		{localizedData, true, "10.88.88.149"},
+		{randomData, false, ""},
+		{noRoute, false, ""},
+		{badRoute1, false, ""},
+		{badRoute2, true, "10.88.88.149"},
+	}
+
+	test(t, interfaceTestCases, parseWindowsInterfaceIP)
 }
 
-func TestParseLinuxProcNetRoute(t *testing.T) {
+func TestParseLinux(t *testing.T) {
 	correctData := []byte(`Iface	Destination	Gateway 	Flags	RefCnt	Use	Metric	Mask		MTU	Window	IRTT                                                       
 wlp4s0	0000FEA9	00000000	0001	0	0	1000	0000FFFF	0	0	0                                                                          
 docker0	000011AC	00000000	0001	0	0	0	0000FFFF	0	0	0                                                                            
@@ -107,55 +118,24 @@ wlp4s0	00000000	0108A8C0	0003	0	0	600	00000000	0	0	0
 Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask            MTU     Window  IRTT                                                       
 `)
 
+	ifData := []byte(`Iface	Destination	Gateway 	Flags	RefCnt	Use	Metric	Mask		MTU	Window	IRTT                                                       
+eth0	00000000	00000000	0001	0	0	1000	0000FFFF	0	0	0                                                                          
+`)
+
 	testcases := []testcase{
 		{correctData, true, "192.168.8.1"},
 		{noRoute, false, ""},
 	}
 
-	test(t, testcases, parseLinuxProcNetRoute)
-}
+	test(t, testcases, parseLinuxGatewayIP)
 
-func TestParseDarwinRouteGet(t *testing.T) {
-	correctData := []byte(`
-   route to: 0.0.0.0
-destination: default
-       mask: default
-    gateway: 172.16.32.1
-  interface: en0
-      flags: <UP,GATEWAY,DONE,STATIC,PRCLONING>
- recvpipe  sendpipe  ssthresh  rtt,msec    rttvar  hopcount      mtu     expire
-       0         0         0         0         0         0      1500         0
-`)
-	randomData := []byte(`
-test
-Lorem ipsum dolor sit amet, consectetur adipiscing elit,
-sed do eiusmod tempor incididunt ut labore et dolore magna
-aliqua. Ut enim ad minim veniam, quis nostrud exercitation
-`)
-	noRoute := []byte(`
-   route to: 0.0.0.0
-destination: default
-       mask: default
-`)
-	badRoute := []byte(`
-   route to: 0.0.0.0
-destination: default
-       mask: default
-    gateway: foo
-  interface: en0
-      flags: <UP,GATEWAY,DONE,STATIC,PRCLONING>
- recvpipe  sendpipe  ssthresh  rtt,msec    rttvar  hopcount      mtu     expire
-       0         0         0         0         0         0      1500         0
-`)
-
-	testcases := []testcase{
-		{correctData, true, "172.16.32.1"},
-		{randomData, false, ""},
+	interfaceTestCases := []testcase{
+		{ifData, true, "192.168.8.238"},
 		{noRoute, false, ""},
-		{badRoute, false, ""},
 	}
 
-	test(t, testcases, parseDarwinRouteGet)
+	// to run interface test in your local computer, change eth0 with your default interface name, and change the expected IP to be your default IP
+	test(t, interfaceTestCases, parseLinuxInterfaceIP)
 }
 
 func TestParseBSDSolarisNetstat(t *testing.T) {
@@ -221,6 +201,49 @@ default            foo                UGS         em0
 	}
 
 	test(t, testcases, parseBSDSolarisNetstat)
+}
+
+func TestParseDarwinRouteGet(t *testing.T) {
+	correctData := []byte(`
+   route to: 0.0.0.0
+destination: default
+       mask: default
+    gateway: 172.16.32.1
+  interface: en0
+      flags: <UP,GATEWAY,DONE,STATIC,PRCLONING>
+ recvpipe  sendpipe  ssthresh  rtt,msec    rttvar  hopcount      mtu     expire
+       0         0         0         0         0         0      1500         0
+`)
+	randomData := []byte(`
+test
+Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+sed do eiusmod tempor incididunt ut labore et dolore magna
+aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+`)
+	noRoute := []byte(`
+   route to: 0.0.0.0
+destination: default
+       mask: default
+`)
+	badRoute := []byte(`
+   route to: 0.0.0.0
+destination: default
+       mask: default
+    gateway: foo
+  interface: en0
+      flags: <UP,GATEWAY,DONE,STATIC,PRCLONING>
+ recvpipe  sendpipe  ssthresh  rtt,msec    rttvar  hopcount      mtu     expire
+       0         0         0         0         0         0      1500         0
+`)
+
+	testcases := []testcase{
+		{correctData, true, "172.16.32.1"},
+		{randomData, false, ""},
+		{noRoute, false, ""},
+		{badRoute, false, ""},
+	}
+
+	test(t, testcases, parseDarwinRouteGet)
 }
 
 func test(t *testing.T, testcases []testcase, fn func([]byte) (net.IP, error)) {
