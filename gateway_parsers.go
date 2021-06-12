@@ -109,23 +109,11 @@ func parseToLinuxRouteStruct(output []byte) (linuxRouteStruct, error) {
 		row := scanner.Text()
 		tokens := strings.Split(row, sep)
 		if len(tokens) < 11 {
-			return linuxRouteStruct{}, fmt.Errorf("invalid row '%s' in route file: doesn't have 11 fields", row)
-		}
-
-		// Cast hex destination address to int
-		destinationHex := "0x" + tokens[destinationField]
-		destination, err := strconv.ParseInt(destinationHex, 0, 64)
-		if err != nil {
-			return linuxRouteStruct{}, fmt.Errorf(
-				"parsing destination field hex '%s' in row '%s': %w",
-				destinationHex,
-				row,
-				err,
-			)
+			return linuxRouteStruct{}, fmt.Errorf("invalid row %q in route file: doesn't have 11 fields", row)
 		}
 
 		// The default interface is the one that's 0
-		if destination != 0 {
+		if tokens[destinationField] != "00000000" {
 			continue
 		}
 
@@ -173,30 +161,24 @@ func parseWindowsInterfaceIP(output []byte) (net.IP, error) {
 }
 
 func parseLinuxGatewayIP(output []byte) (net.IP, error) {
-
 	parsedStruct, err := parseToLinuxRouteStruct(output)
 	if err != nil {
 		return nil, err
 	}
 
-	destinationHex := "0x" + parsedStruct.Destination
-	gatewayHex := "0x" + parsedStruct.Gateway
-
 	// cast hex address to uint32
-	d, err := strconv.ParseInt(gatewayHex, 0, 64)
+	d, err := strconv.ParseUint(parsedStruct.Gateway, 16, 32)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"parsing default interface address field hex '%s': %w",
-			destinationHex,
+			"parsing default interface address field hex %q: %w",
+			parsedStruct.Destination,
 			err,
 		)
 	}
 	// make net.IP address from uint32
 	ipd32 := make(net.IP, 4)
 	binary.LittleEndian.PutUint32(ipd32, uint32(d))
-
-	// format net.IP to dotted ipV4 string
-	return net.IP(ipd32), nil
+	return ipd32, nil
 }
 
 func parseLinuxInterfaceIP(output []byte) (net.IP, error) {
@@ -215,13 +197,21 @@ func parseLinuxInterfaceIP(output []byte) (net.IP, error) {
 		return nil, err
 	}
 
-	// split when its 192.168.8.8/24
-	ipString := strings.Split(addrs[0].String(), "/")[0]
-	ip := net.ParseIP(ipString)
-	if ip == nil {
-		return nil, fmt.Errorf("invalid addr %s", ipString)
+	// Return the first IPv4 address we encounter.
+	for _, addr := range addrs {
+		ipnet, ok := addr.(*net.IPNet)
+		if !ok {
+			continue
+		}
+
+		ip := ipnet.IP.To4()
+		if ip != nil {
+			return ip, nil
+		}
 	}
-	return ip, nil
+
+	return nil, fmt.Errorf("no IPv4 address found for interface %v",
+		parsedStruct.Iface)
 }
 
 func parseDarwinRouteGet(output []byte) (net.IP, error) {
