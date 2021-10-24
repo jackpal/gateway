@@ -12,25 +12,13 @@ import (
 )
 
 type windowsRouteStruct struct {
-	Destination string
-	Netmask     string
-	Gateway     string
-	Interface   string
-	Metric      string
+	Gateway   string
+	Interface string
 }
 
 type linuxRouteStruct struct {
-	Iface       string
-	Destination string
-	Gateway     string
-	Flags       string
-	RefCnt      string
-	Use         string
-	Metric      string
-	Mask        string
-	MTU         string
-	Window      string
-	IRTT        string
+	Iface   string
+	Gateway string
 }
 
 func parseToWindowsRouteStruct(output []byte) (windowsRouteStruct, error) {
@@ -66,11 +54,8 @@ func parseToWindowsRouteStruct(output []byte) (windowsRouteStruct, error) {
 			}
 
 			return windowsRouteStruct{
-				Destination: fields[0],
-				Netmask:     fields[1],
-				Gateway:     fields[2],
-				Interface:   fields[3],
-				Metric:      fields[4],
+				Gateway:   fields[2],
+				Interface: fields[3],
 			}, nil
 		}
 		if strings.HasPrefix(line, "=======") {
@@ -118,17 +103,8 @@ func parseToLinuxRouteStruct(output []byte) (linuxRouteStruct, error) {
 		}
 
 		return linuxRouteStruct{
-			Iface:       tokens[0],
-			Destination: tokens[1],
-			Gateway:     tokens[2],
-			Flags:       tokens[3],
-			RefCnt:      tokens[4],
-			Use:         tokens[5],
-			Metric:      tokens[6],
-			Mask:        tokens[7],
-			MTU:         tokens[8],
-			Window:      tokens[9],
-			IRTT:        tokens[10],
+			Iface:   tokens[0],
+			Gateway: tokens[2],
 		}, nil
 	}
 	return linuxRouteStruct{}, errors.New("interface with default destination not found")
@@ -171,7 +147,7 @@ func parseLinuxGatewayIP(output []byte) (net.IP, error) {
 	if err != nil {
 		return nil, fmt.Errorf(
 			"parsing default interface address field hex %q: %w",
-			parsedStruct.Destination,
+			parsedStruct.Gateway,
 			err,
 		)
 	}
