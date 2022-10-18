@@ -97,6 +97,7 @@ func parseToLinuxRouteStruct(output []byte) (linuxRouteStruct, error) {
 		sep              = "\t" // field separator
 		destinationField = 1    // field containing hex destination address
 		gatewayField     = 2    // field containing hex gateway address
+		maskField        = 7    // field containing hex mask
 	)
 	scanner := bufio.NewScanner(bytes.NewReader(output))
 
@@ -124,8 +125,20 @@ func parseToLinuxRouteStruct(output []byte) (linuxRouteStruct, error) {
 			)
 		}
 
+		// Cast hex destination address to int
+		maskHex := "0x" + tokens[maskField]
+		mask, err := strconv.ParseInt(maskHex, 0, 64)
+		if err != nil {
+			return linuxRouteStruct{}, fmt.Errorf(
+				"parsing mask field hex '%s' in row '%s': %w",
+				maskHex,
+				row,
+				err,
+			)
+		}
+
 		// The default interface is the one that's 0
-		if destination != 0 {
+		if destination != 0 || mask != 0 {
 			continue
 		}
 
