@@ -245,6 +245,47 @@ destination: default
 	test(t, testcases, parseDarwinRouteGet)
 }
 
+func TestParseDarwinNetstat(t *testing.T) {
+	correctDataDarwin := []byte(`
+Internet:
+Destination        Gateway            Flags           Netif Expire
+default            link#17            UCSg            utun3
+default            192.168.1.254      UGScIg            en0
+`)
+	randomData := []byte(`
+test
+Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+sed do eiusmod tempor incididunt ut labore et dolore magna
+aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+`)
+
+	noRoute := []byte(`
+Internet:
+Destination        Gateway            Flags      Netif Expire
+10.88.88.0/24      link#1             U           em0
+10.88.88.148       link#1             UHS         lo0
+127.0.0.1          link#2             UH          lo0
+`)
+
+	badRoute := []byte(`
+Internet:
+Destination        Gateway            Flags      Netif Expire
+default            foo                UGS         em0
+10.88.88.0/24      link#1             U           em0
+10.88.88.148       link#1             UHS         lo0
+127.0.0.1          link#2             UH          lo0
+`)
+
+	testcases := []testcase{
+		{correctDataDarwin, true, "192.168.1.254"},
+		{randomData, false, ""},
+		{noRoute, false, ""},
+		{badRoute, false, ""},
+	}
+
+	test(t, testcases, parseDarwinNetstat)
+}
+
 func test(t *testing.T, testcases []testcase, fn func([]byte) (net.IP, error)) {
 	for i, tc := range testcases {
 		net, err := fn(tc.output)

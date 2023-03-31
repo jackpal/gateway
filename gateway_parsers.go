@@ -244,6 +244,27 @@ func parseDarwinRouteGet(output []byte) (net.IP, error) {
 	return nil, errNoGateway
 }
 
+func parseDarwinNetstat(output []byte) (net.IP, error) {
+	// Darwin netstat -nr out format is always like this:
+	// Routing tables
+
+	// Internet:
+	// Destination        Gateway            Flags           Netif Expire
+	// default            link#17            UCSg            utun3
+	// default            192.168.1.1      	 UGScIg            en0
+	outputLines := strings.Split(string(output), "\n")
+	for _, line := range outputLines {
+		fields := strings.Fields(line)
+		if len(fields) >= 2 && fields[0] == "default" {
+			ip := net.ParseIP(fields[1])
+			if ip != nil {
+				return ip, nil
+			}
+		}
+	}
+	return nil, errNoGateway
+}
+
 func parseBSDSolarisNetstat(output []byte) (net.IP, error) {
 	// netstat -rn produces the following on FreeBSD:
 	// Routing tables
