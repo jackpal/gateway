@@ -223,6 +223,38 @@ func parseDarwinRouteGet(output []byte) (net.IP, error) {
 	return nil, errNoGateway
 }
 
+func parseDarwinNetstat(output []byte) (net.IP, error) {
+	// Darwin netstat -nr out format is always like this:
+	// Routing tables
+
+	// Internet:
+	// Destination        Gateway            Flags           Netif Expire
+	// default            link#17            UCSg            utun3
+	// default            192.168.1.1      	 UGScIg            en0
+	outputLines := strings.Split(string(output), "\n")
+	for _, line := range outputLines {
+		fields := strings.Fields(line)
+
+		if len(fields) >= 3 && fields[0] == "default" {
+			// validate routing table flags:
+			// https://library.netapp.com/ecmdocs/ECMP1155586/html/GUID-07F1F043-7AB7-4749-8F8D-727929233E62.html
+			//
+			// U = Up—Route is valid
+			isUp := strings.Contains(fields[2], "U")
+			// G = Gateway—Route is to a gateway router rather than to a directly connected network or host
+			isGateway := strings.Contains(fields[2], "G")
+
+			if isUp && isGateway {
+				ip := net.ParseIP(fields[1])
+				if ip != nil {
+					return ip, nil
+				}
+			}
+		}
+	}
+	return nil, errNoGateway
+}
+
 func parseBSDSolarisNetstat(output []byte) (net.IP, error) {
 	// netstat -rn produces the following on FreeBSD:
 	// Routing tables
