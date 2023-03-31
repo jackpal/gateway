@@ -7,9 +7,10 @@ A simple library for discovering the IP address of the default gateway.
 
 Provides implementations for:
 
++ Darwin (macOS)
 + FreeBSD
 + Linux
-+ OS X (Darwin)
++ OpenBSD
 + Solaris
 + Windows
 
