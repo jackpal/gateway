@@ -1,4 +1,5 @@
-// +build !darwin,!linux,!windows,!solaris,!freebsd,!openbsd
+//go:build !darwin && !dragonfly && !freebsd && !linux && !netbsd && !openbsd && !solaris && !windows
+// +build !darwin,!dragonfly,!freebsd,!linux,!netbsd,!openbsd,!solaris,!windows
 
 package gateway
 

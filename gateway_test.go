@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"fmt"
 	"net"
 	"testing"
 )
@@ -125,9 +126,9 @@ Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask    
 
 	test(t, testcases, parseLinuxGatewayIP)
 
-	// ifData := []byte(`Iface	Destination	Gateway 	Flags	RefCnt	Use	Metric	Mask		MTU	Window	IRTT                                                       
-    // eth0	00000000	00000000	0001	0	0	1000	0000FFFF	0	0	0                                                                          
-    // `)
+	// ifData := []byte(`Iface	Destination	Gateway 	Flags	RefCnt	Use	Metric	Mask		MTU	Window	IRTT
+	// eth0	00000000	00000000	0001	0	0	1000	0000FFFF	0	0	0
+	// `)
 	// interfaceTestCases := []testcase{
 	// 	{ifData, true, "192.168.8.238"},
 	// 	{noRoute, false, ""},
@@ -299,5 +300,14 @@ func test(t *testing.T, testcases []testcase, fn func([]byte) (net.IP, error)) {
 		} else if err == nil {
 			t.Errorf("Unexpected nil error in test #%d", i)
 		}
+	}
+}
+
+func ExampleDiscoverGateway() {
+	gateway, err := DiscoverGateway()
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println("Gateway:", gateway.String())
 	}
 }
