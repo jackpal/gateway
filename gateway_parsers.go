@@ -98,20 +98,8 @@ func parseToLinuxRouteStruct(output []byte) (linuxRouteStruct, error) {
 			return linuxRouteStruct{}, fmt.Errorf("invalid row %q in route file: doesn't have 11 fields", row)
 		}
 
-		// Cast hex destination address to int
-		maskHex := "0x" + tokens[maskField]
-		mask, err := strconv.ParseInt(maskHex, 0, 64)
-		if err != nil {
-			return linuxRouteStruct{}, fmt.Errorf(
-				"parsing mask field hex '%s' in row '%s': %w",
-				maskHex,
-				row,
-				err,
-			)
-		}
-
 		// The default interface is the one that's 0 for both destination and mask.
-		if !(tokens[destinationField] == "00000000" && tokens[maskField] == "00000000")  {
+		if !(tokens[destinationField] == "00000000" && tokens[maskField] == "00000000") {
 			continue
 		}
 
