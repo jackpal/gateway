@@ -255,10 +255,21 @@ func parseDarwinNetstat(output []byte) (net.IP, error) {
 	outputLines := strings.Split(string(output), "\n")
 	for _, line := range outputLines {
 		fields := strings.Fields(line)
-		if len(fields) >= 2 && fields[0] == "default" {
-			ip := net.ParseIP(fields[1])
-			if ip != nil {
-				return ip, nil
+
+		if len(fields) >= 3 && fields[0] == "default" {
+			// validate routing table flags:
+			// https://library.netapp.com/ecmdocs/ECMP1155586/html/GUID-07F1F043-7AB7-4749-8F8D-727929233E62.html
+			//
+			// U = Up—Route is valid
+			isUp := strings.Contains(fields[2], "U")
+			// G = Gateway—Route is to a gateway router rather than to a directly connected network or host
+			isGateway := strings.Contains(fields[2], "G")
+
+			if isUp && isGateway {
+				ip := net.ParseIP(fields[1])
+				if ip != nil {
+					return ip, nil
+				}
 			}
 		}
 	}
