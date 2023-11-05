@@ -1,10 +1,11 @@
+//go:build linux
 // +build linux
 
 package gateway
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"os"
 )
@@ -21,7 +22,7 @@ func discoverGatewayOSSpecific() (ip net.IP, err error) {
 	}
 	defer f.Close()
 
-	bytes, err := ioutil.ReadAll(f)
+	bytes, err := io.ReadAll(f)
 	if err != nil {
 		return nil, fmt.Errorf("Can't read %s", file)
 	}
@@ -35,7 +36,7 @@ func discoverGatewayInterfaceOSSpecific() (ip net.IP, err error) {
 	}
 	defer f.Close()
 
-	bytes, err := ioutil.ReadAll(f)
+	bytes, err := io.ReadAll(f)
 	if err != nil {
 		return nil, fmt.Errorf("Can't read %s", file)
 	}
