@@ -1,0 +1,9 @@
+Routing tables
+
+Internet:
+Destination        Gateway            Flags    Refs      Use    Mtu Interface
+127/8              127.0.0.1          UGRS        -        -  33624  lo0
+127.0.0.1          lo0                UHl         -        -  33624  lo0
+172.31.16/20       link#1             UC          -        -   9001  ena0
+172.31.22.254      link#1             UHl         -        -      -  lo0
+172.31.16.1        06:fd:6a:57:a9:12  UHL         -        -      -  ena0

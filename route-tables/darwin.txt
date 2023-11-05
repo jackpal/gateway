@@ -1,0 +1,7 @@
+Routing tables
+
+Internet:
+Destination        Gateway            Flags           Netif Expire
+default            link#17            UCSg            utun3
+default            192.168.1.254      UGScIg            en0
+                            
