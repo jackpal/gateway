@@ -2,12 +2,13 @@ package gateway
 
 import "net"
 
-// Wrapper for net.InterfaceByName so it can be mocked in tests.
+// Wrapper for calls into the go "net" library that can be mocked for tests
 type interfaceGetter interface {
 	InterfaceByName(name string) (*net.Interface, error)
 	Addrs(iface *net.Interface) ([]net.Addr, error)
 }
 
+// Concrete impmentation of above interface
 type intefaceGetterImpl struct{}
 
 func (*intefaceGetterImpl) InterfaceByName(name string) (*net.Interface, error) {
