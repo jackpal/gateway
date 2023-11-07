@@ -11,12 +11,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type testcase struct {
-	output  []byte
-	ok      bool
-	gateway string
-}
-
 type testcase2 struct {
 	tableName string
 	ok        bool
@@ -92,49 +86,6 @@ func TestParseLinux(t *testing.T) {
 	// test(t, interfaceTestCases, parseLinuxInterfaceIP)
 }
 
-func TestParseDarwinRouteGet(t *testing.T) {
-	correctData := []byte(`
-   route to: 0.0.0.0
-destination: default
-       mask: default
-    gateway: 172.16.32.1
-  interface: en0
-      flags: <UP,GATEWAY,DONE,STATIC,PRCLONING>
- recvpipe  sendpipe  ssthresh  rtt,msec    rttvar  hopcount      mtu     expire
-       0         0         0         0         0         0      1500         0
-`)
-	randomData := []byte(`
-test
-Lorem ipsum dolor sit amet, consectetur adipiscing elit,
-sed do eiusmod tempor incididunt ut labore et dolore magna
-aliqua. Ut enim ad minim veniam, quis nostrud exercitation
-`)
-	noRoute := []byte(`
-   route to: 0.0.0.0
-destination: default
-       mask: default
-`)
-	badRoute := []byte(`
-   route to: 0.0.0.0
-destination: default
-       mask: default
-    gateway: foo
-  interface: en0
-      flags: <UP,GATEWAY,DONE,STATIC,PRCLONING>
- recvpipe  sendpipe  ssthresh  rtt,msec    rttvar  hopcount      mtu     expire
-       0         0         0         0         0         0      1500         0
-`)
-
-	testcases := []testcase{
-		{correctData, true, "172.16.32.1"},
-		{randomData, false, ""},
-		{noRoute, false, ""},
-		{badRoute, false, ""},
-	}
-
-	test(t, testcases, parseDarwinRouteGet)
-}
-
 func TestParseUnix(t *testing.T) {
 	// Unix route tables are extracted from netstat -rn
 
@@ -179,24 +130,6 @@ func TestParseUnix(t *testing.T) {
 	t.Run("parseUnixInterfaceIP", func(t *testing.T) {
 		testInterfaceAddress(t, interfaceTestCases, parseUnixInterfaceIPImpl)
 	})
-}
-
-func test(t *testing.T, testcases []testcase, fn func([]byte) (net.IP, error)) {
-	for i, tc := range testcases {
-		t.Run("unixGateway", func(t *testing.T) {
-			net, err := fn(tc.output)
-			if tc.ok {
-				if err != nil {
-					t.Errorf("Unexpected error in test #%d: %v", i, err)
-				}
-				if net.String() != tc.gateway {
-					t.Errorf("Unexpected gateway address %v != %s", net, tc.gateway)
-				}
-			} else if err == nil {
-				t.Errorf("Unexpected nil error in test #%d", i)
-			}
-		})
-	}
 }
 
 func testGatewayAddress(t *testing.T, testcases []testcase2, fn func([]byte) (net.IP, error)) {
