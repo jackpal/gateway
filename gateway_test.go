@@ -11,22 +11,36 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type testcase2 struct {
+// For tests where an IP is parsed directly from route table
+type ipTestCase struct {
+	// Name of route table (tes_route_tables.go)
 	tableName string
-	ok        bool
-	ifaceIP   string
+
+	// True if valid data expected
+	ok bool
+
+	// Dotted IP to assert
+	ifaceIP string
 }
 
+// For tests where an interface name is parsed from route table
 type ifaceTestCase struct {
+	// Name of route table (tes_route_tables.go)
 	tableName string
+
+	// Name of interface expected from route table
 	ifaceName string
-	ok        bool
-	ifaceIP   string
+
+	// True if valid data expected
+	ok bool
+
+	// Dotted IP to assert
+	ifaceIP string
 }
 
 func TestParseWindows(t *testing.T) {
 
-	testcases := []testcase2{
+	testcases := []ipTestCase{
 		{windows, true, "10.88.88.2"},
 		{windowsLocalized, true, "10.88.88.2"},
 		{randomData, false, ""},
@@ -39,7 +53,7 @@ func TestParseWindows(t *testing.T) {
 		testGatewayAddress(t, testcases, parseWindowsGatewayIP)
 	})
 
-	interfaceTestCases := []testcase2{
+	interfaceTestCases := []ipTestCase{
 		{windows, true, "10.88.88.149"},
 		{windowsLocalized, true, "10.88.88.149"},
 		{randomData, false, ""},
@@ -56,7 +70,7 @@ func TestParseWindows(t *testing.T) {
 func TestParseLinux(t *testing.T) {
 	// Linux ruote tables are extracted from  proc filesystem
 
-	testcases := []testcase2{
+	testcases := []ipTestCase{
 		{linux, true, "192.168.8.1"},
 		{linuxNoRoute, false, ""},
 	}
@@ -89,7 +103,7 @@ func TestParseLinux(t *testing.T) {
 func TestParseUnix(t *testing.T) {
 	// Unix route tables are extracted from netstat -rn
 
-	testcases := []testcase2{
+	testcases := []ipTestCase{
 		{darwin, true, "192.168.1.254"},
 		{freeBSD, true, "10.88.88.2"},
 		{netBSD, true, "172.31.16.1"},
@@ -132,7 +146,7 @@ func TestParseUnix(t *testing.T) {
 	})
 }
 
-func testGatewayAddress(t *testing.T, testcases []testcase2, fn func([]byte) (net.IP, error)) {
+func testGatewayAddress(t *testing.T, testcases []ipTestCase, fn func([]byte) (net.IP, error)) {
 	for i, tc := range testcases {
 		t.Run(tc.tableName, func(t *testing.T) {
 			net, err := fn(routeTables[tc.tableName])
