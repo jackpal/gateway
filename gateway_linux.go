@@ -15,30 +15,33 @@ const (
 	file = "/proc/net/route"
 )
 
-func discoverGatewayOSSpecific() (ip net.IP, err error) {
+func readRoutes() ([]byte, error) {
 	f, err := os.Open(file)
 	if err != nil {
-		return nil, fmt.Errorf("Can't access %s", file)
+		return nil, fmt.Errorf("can't access %s", file)
 	}
 	defer f.Close()
 
 	bytes, err := io.ReadAll(f)
 	if err != nil {
-		return nil, fmt.Errorf("Can't read %s", file)
+		return nil, fmt.Errorf("can't read %s", file)
+	}
+
+	return bytes, nil
+}
+
+func discoverGatewayOSSpecific() (ip net.IP, err error) {
+	bytes, err := readRoutes()
+	if err != nil {
+		return nil, err
 	}
 	return parseLinuxGatewayIP(bytes)
 }
 
 func discoverGatewayInterfaceOSSpecific() (ip net.IP, err error) {
-	f, err := os.Open(file)
+	bytes, err := readRoutes()
 	if err != nil {
-		return nil, fmt.Errorf("Can't access %s", file)
-	}
-	defer f.Close()
-
-	bytes, err := io.ReadAll(f)
-	if err != nil {
-		return nil, fmt.Errorf("Can't read %s", file)
+		return nil, err
 	}
 	return parseLinuxInterfaceIP(bytes)
 }
