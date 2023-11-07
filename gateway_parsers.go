@@ -50,6 +50,7 @@ type unixRouteStruct struct {
 }
 
 func fieldNum(name string, fields []string) int {
+	// Return the zero-based index of given field in slice of field names
 	for num, field := range fields {
 		if name == field {
 			return num
@@ -59,8 +60,8 @@ func fieldNum(name string, fields []string) int {
 	return -1
 }
 
-// Discover positions of fields of interest in netstat output
 func discoverFields(output []byte) (int, netstatFields) {
+	// Discover positions of fields of interest in netstat output
 	nf := make(netstatFields, 4)
 
 	outputLines := strings.Split(string(output), "\n")
@@ -90,8 +91,8 @@ func discoverFields(output []byte) (int, netstatFields) {
 	return -1, nil
 }
 
-// Check route flag for existence of specific flags
 func flagsContain(flags string, flag ...string) bool {
+	// Check route table flags field for existence of specific flags
 	contain := true
 
 	for _, f := range flag {
@@ -269,6 +270,8 @@ func parseUnixInterfaceIPImpl(output []byte, ifaceGetter interfaceGetter) (net.I
 }
 
 func getInterfaceIP4(name string, ifaceGetter interfaceGetter) (net.IP, error) {
+	// Given interface name and an interface to "net" package
+	// lookup ip4 for the given interface
 	iface, err := ifaceGetter.InterfaceByName(name)
 	if err != nil {
 		return nil, err
@@ -296,6 +299,7 @@ func getInterfaceIP4(name string, ifaceGetter interfaceGetter) (net.IP, error) {
 }
 
 func parseUnixGatewayIP(output []byte) (net.IP, error) {
+	// Extract default gateway IP from netstat route table
 	parsedStruct, err := parseNetstatToRouteStruct(output)
 	if err != nil {
 		return nil, err
