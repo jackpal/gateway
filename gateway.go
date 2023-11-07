@@ -10,6 +10,7 @@ var (
 	errNoGateway      = errors.New("no gateway found")
 	errCantParse      = errors.New("can't parse string output")
 	errNotImplemented = errors.New("not implemented for OS: " + runtime.GOOS)
+	errBadNetstat     = errors.New("can't parse netstat output")
 )
 
 // DiscoverGateway is the OS independent function to get the default gateway
