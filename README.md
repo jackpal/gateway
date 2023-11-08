@@ -40,9 +40,15 @@ Pull requests for other OSs happily considered!
 
 ## Versions
 
+### v1.0.11
+
++ Implement DiscoverInterface for BSD-like OSes.
+
 ### v1.0.10
 
 + Fix non-BSD-based builds.
+  
+
 ### v1.0.9
 
 + Add go.mod and go.sum files.
