@@ -8,7 +8,7 @@ type interfaceGetter interface {
 	Addrs(iface *net.Interface) ([]net.Addr, error)
 }
 
-// Concrete impmentation of above interface
+// Concrete implementation of above interface
 type intefaceGetterImpl struct{}
 
 func (*intefaceGetterImpl) InterfaceByName(name string) (*net.Interface, error) {

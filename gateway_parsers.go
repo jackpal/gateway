@@ -326,7 +326,7 @@ func parseNetstatToRouteStruct(output []byte) (unixRouteStruct, error) {
 
 	for lineNo, line := range outputLines {
 		if lineNo <= startLine || strings.Contains(line, "-----") {
-			// Skip until past column headers and headning underlines (solaris)
+			// Skip until past column headers and heading underlines (solaris)
 			continue
 		}
 
