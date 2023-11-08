@@ -1,0 +1,7 @@
+Routing tables
+
+Internet:
+Destination        Gateway            Flags      Netif Expire
+10.88.88.0/24      link#1             U          ena0
+10.88.88.148       link#1             UHS         lo0
+127.0.0.1          link#2             UH          lo0

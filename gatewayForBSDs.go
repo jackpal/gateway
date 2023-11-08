@@ -4,10 +4,16 @@ package gateway
 
 import (
 	"net"
+	"os/exec"
 	"syscall"
 
 	"golang.org/x/net/route"
 )
+
+func readNetstat() ([]byte, error) {
+	routeCmd := exec.Command("netstat", "-rn")
+	return routeCmd.CombinedOutput()
+}
 
 func discoverGatewayOSSpecific() (ip net.IP, err error) {
 	rib, err := route.FetchRIB(syscall.AF_INET, syscall.NET_RT_DUMP, 0)
@@ -39,5 +45,10 @@ func discoverGatewayOSSpecific() (ip net.IP, err error) {
 }
 
 func discoverGatewayInterfaceOSSpecific() (ip net.IP, err error) {
-	return nil, errNotImplemented
+	bytes, err := readNetstat()
+	if err != nil {
+		return nil, err
+	}
+
+	return parseUnixInterfaceIP(bytes)
 }

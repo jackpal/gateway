@@ -1,0 +1,13 @@
+===========================================================================
+Liste d'Interfaces
+ 17...00 28 f8 39 61 6b ......Microsoft Wi-Fi Direct Virtual Adapter
+  1...........................Software Loopback Interface 1
+===========================================================================
+IPv4 Table de routage
+===========================================================================
+Itinéraires actifs :
+Destination réseau    Masque réseau  Adr. passerelle   Adr. interface Métrique
+          0.0.0.0          0.0.0.0      10.88.88.2     10.88.88.149     10
+===========================================================================
+Itinéraires persistants :
+  Aucun

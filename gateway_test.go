@@ -1,130 +1,92 @@
+//go:generate tools/generate-tables.sh
+
 package gateway
 
 import (
 	"fmt"
 	"net"
+	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/mock"
 )
 
-type testcase struct {
-	output  []byte
-	ok      bool
-	gateway string
+// For tests where an IP is parsed directly from route table
+type ipTestCase struct {
+	// Name of route table (tes_route_tables.go)
+	tableName string
+
+	// True if valid data expected
+	ok bool
+
+	// Dotted IP to assert
+	ifaceIP string
+}
+
+// For tests where an interface name is parsed from route table
+type ifaceTestCase struct {
+	// Name of route table (tes_route_tables.go)
+	tableName string
+
+	// Name of interface expected from route table
+	ifaceName string
+
+	// True if valid data expected
+	ok bool
+
+	// Dotted IP to assert
+	ifaceIP string
 }
 
 func TestParseWindows(t *testing.T) {
-	correctData := []byte(`
-===========================================================================
-Interface List
-  8 ...00 12 3f a7 17 ba ...... Intel(R) PRO/100 VE Network Connection
-  1 ........................... Software Loopback Interface 1
-===========================================================================
-IPv4 Route Table
-===========================================================================
-Active Routes:
-Network Destination        Netmask          Gateway       Interface  Metric
-          0.0.0.0          0.0.0.0       10.88.88.2     10.88.88.149     10
-===========================================================================
-Persistent Routes:
-`)
-	localizedData := []byte(
-		`===========================================================================
-Liste d'Interfaces
- 17...00 28 f8 39 61 6b ......Microsoft Wi-Fi Direct Virtual Adapter
-  1...........................Software Loopback Interface 1
-===========================================================================
-IPv4 Table de routage
-===========================================================================
-Itinéraires actifs :
-Destination réseau    Masque réseau  Adr. passerelle   Adr. interface Métrique
-          0.0.0.0          0.0.0.0      10.88.88.2     10.88.88.149     10
-===========================================================================
-Itinéraires persistants :
-  Aucun
-`)
-	randomData := []byte(`
-Lorem ipsum dolor sit amet, consectetur adipiscing elit,
-sed do eiusmod tempor incididunt ut labore et dolore magna
-aliqua. Ut enim ad minim veniam, quis nostrud exercitation
-`)
-	noRoute := []byte(`
-===========================================================================
-Interface List
-  8 ...00 12 3f a7 17 ba ...... Intel(R) PRO/100 VE Network Connection
-  1 ........................... Software Loopback Interface 1
-===========================================================================
-IPv4 Route Table
-===========================================================================
-Active Routes:
-`)
-	badRoute1 := []byte(`
-===========================================================================
-Interface List
-  8 ...00 12 3f a7 17 ba ...... Intel(R) PRO/100 VE Network Connection
-  1 ........................... Software Loopback Interface 1
-===========================================================================
-IPv4 Route Table
-===========================================================================
-Active Routes:
-===========================================================================
-Persistent Routes:
-`)
-	badRoute2 := []byte(`
-===========================================================================
-Interface List
-  8 ...00 12 3f a7 17 ba ...... Intel(R) PRO/100 VE Network Connection
-  1 ........................... Software Loopback Interface 1
-===========================================================================
-IPv4 Route Table
-===========================================================================
-Active Routes:
-Network Destination        Netmask          Gateway       Interface  Metric
-          0.0.0.0          0.0.0.0          foo           10.88.88.149     10
-===========================================================================
-Persistent Routes:
-`)
 
-	testcases := []testcase{
-		{correctData, true, "10.88.88.2"},
-		{localizedData, true, "10.88.88.2"},
+	testcases := []ipTestCase{
+		{windows, true, "10.88.88.2"},
+		{windowsLocalized, true, "10.88.88.2"},
 		{randomData, false, ""},
-		{noRoute, false, ""},
-		{badRoute1, false, ""},
-		{badRoute2, false, ""},
+		{windowsNoRoute, false, ""},
+		{windowsBadRoute1, false, ""},
+		{windowsBadRoute2, false, ""},
 	}
 
-	test(t, testcases, parseWindowsGatewayIP)
+	t.Run("parseWindowsGatewayIP", func(t *testing.T) {
+		testGatewayAddress(t, testcases, parseWindowsGatewayIP)
+	})
 
-	interfaceTestCases := []testcase{
-		{correctData, true, "10.88.88.149"},
-		{localizedData, true, "10.88.88.149"},
+	interfaceTestCases := []ipTestCase{
+		{windows, true, "10.88.88.149"},
+		{windowsLocalized, true, "10.88.88.149"},
 		{randomData, false, ""},
-		{noRoute, false, ""},
-		{badRoute1, false, ""},
-		{badRoute2, true, "10.88.88.149"},
+		{windowsNoRoute, false, ""},
+		{windowsBadRoute1, false, ""},
+		{windowsBadRoute2, true, "10.88.88.149"},
 	}
 
-	test(t, interfaceTestCases, parseWindowsInterfaceIP)
+	t.Run("parseWindowsInterfaceIP", func(t *testing.T) {
+		testGatewayAddress(t, interfaceTestCases, parseWindowsInterfaceIP)
+	})
 }
 
 func TestParseLinux(t *testing.T) {
-	correctData := []byte(`Iface	Destination	Gateway 	Flags	RefCnt	Use	Metric	Mask		MTU	Window	IRTT                                                       
-wlp4s0	0000FEA9	00000000	0001	0	0	1000	0000FFFF	0	0	0                                                                          
-docker0	000011AC	00000000	0001	0	0	0	0000FFFF	0	0	0                                                                            
-docker_gwbridge	000012AC	00000000	0001	0	0	0	0000FFFF	0	0	0                                                                    
-wlp4s0	0008A8C0	00000000	0001	0	0	600	00FFFFFF	0	0	0                                                                           
-wlp4s0	00000000	0108A8C0	0003	0	0	600	00000000	0	0	0                                                                           
-`)
-	noRoute := []byte(`
-Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask            MTU     Window  IRTT                                                       
-`)
+	// Linux ruote tables are extracted from  proc filesystem
 
-	testcases := []testcase{
-		{correctData, true, "192.168.8.1"},
-		{noRoute, false, ""},
+	testcases := []ipTestCase{
+		{linux, true, "192.168.8.1"},
+		{linuxNoRoute, false, ""},
 	}
 
-	test(t, testcases, parseLinuxGatewayIP)
+	t.Run("parseLinuxGatewayIP", func(t *testing.T) {
+		testGatewayAddress(t, testcases, parseLinuxGatewayIP)
+	})
+
+	interfaceTestCases := []ifaceTestCase{
+		{linux, "wlp4s0", true, "192.168.2.1"},
+		{linuxNoRoute, "wlp4s0", false, ""},
+	}
+
+	t.Run("parseLinuxInterfaceIP", func(t *testing.T) {
+		testInterfaceAddress(t, interfaceTestCases, parseLinuxInterfaceIPImpl)
+	})
 
 	// ifData := []byte(`Iface	Destination	Gateway 	Flags	RefCnt	Use	Metric	Mask		MTU	Window	IRTT
 	// eth0	00000000	00000000	0001	0	0	1000	0000FFFF	0	0	0
@@ -138,168 +100,155 @@ Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask    
 	// test(t, interfaceTestCases, parseLinuxInterfaceIP)
 }
 
-func TestParseBSDSolarisNetstat(t *testing.T) {
-	correctDataFreeBSD := []byte(`
-Routing tables
+func TestParseUnix(t *testing.T) {
+	// Unix route tables are extracted from netstat -rn
 
-Internet:
-Destination        Gateway            Flags      Netif Expire
-default            10.88.88.2         UGS         em0
-10.88.88.0/24      link#1             U           em0
-10.88.88.148       link#1             UHS         lo0
-127.0.0.1          link#2             UH          lo0
-
-Internet6:
-Destination                       Gateway                       Flags      Netif Expire
-::/96                             ::1                           UGRS        lo0
-::1                               link#2                        UH          lo0
-::ffff:0.0.0.0/96                 ::1                           UGRS        lo0
-fe80::/10                         ::1                           UGRS        lo0
-`)
-	correctDataSolaris := []byte(`
-Routing Table: IPv4
-  Destination           Gateway           Flags  Ref     Use     Interface
--------------------- -------------------- ----- ----- ---------- ---------
-default              172.16.32.1          UG        2      76419 net0
-127.0.0.1            127.0.0.1            UH        2         36 lo0
-172.16.32.0          172.16.32.17         U         4       8100 net0
-
-Routing Table: IPv6
-  Destination/Mask            Gateway                   Flags Ref   Use    If
---------------------------- --------------------------- ----- --- ------- -----
-::1                         ::1                         UH      3   75382 lo0
-2001:470:deeb:32::/64       2001:470:deeb:32::17        U       3    2744 net0
-fe80::/10                   fe80::6082:52ff:fedc:7df0   U       3    8430 net0
-`)
-	randomData := []byte(`
-Lorem ipsum dolor sit amet, consectetur adipiscing elit,
-sed do eiusmod tempor incididunt ut labore et dolore magna
-aliqua. Ut enim ad minim veniam, quis nostrud exercitation
-`)
-	noRoute := []byte(`
-Internet:
-Destination        Gateway            Flags      Netif Expire
-10.88.88.0/24      link#1             U           em0
-10.88.88.148       link#1             UHS         lo0
-127.0.0.1          link#2             UH          lo0
-`)
-	badRoute := []byte(`
-Internet:
-Destination        Gateway            Flags      Netif Expire
-default            foo                UGS         em0
-10.88.88.0/24      link#1             U           em0
-10.88.88.148       link#1             UHS         lo0
-127.0.0.1          link#2             UH          lo0
-`)
-
-	testcases := []testcase{
-		{correctDataFreeBSD, true, "10.88.88.2"},
-		{correctDataSolaris, true, "172.16.32.1"},
+	testcases := []ipTestCase{
+		{darwin, true, "192.168.1.254"},
+		{freeBSD, true, "10.88.88.2"},
+		{netBSD, true, "172.31.16.1"},
+		{solaris, true, "172.16.32.1"},
 		{randomData, false, ""},
-		{noRoute, false, ""},
-		{badRoute, false, ""},
+		{darwinNoRoute, false, ""},
+		{darwinBadRoute, false, ""},
+		{freeBSDNoRoute, false, ""},
+		{freeBSDBadRoute, false, ""},
+		{netBSDNoRoute, false, ""},
+		{netBSDBadRoute, false, ""},
+		{solarisNoRoute, false, ""},
+		{solarisBadRoute, false, ""},
 	}
 
-	test(t, testcases, parseBSDSolarisNetstat)
-}
+	t.Run("parseUnixGatewayIP", func(t *testing.T) {
+		testGatewayAddress(t, testcases, parseUnixGatewayIP)
+	})
 
-func TestParseDarwinRouteGet(t *testing.T) {
-	correctData := []byte(`
-   route to: 0.0.0.0
-destination: default
-       mask: default
-    gateway: 172.16.32.1
-  interface: en0
-      flags: <UP,GATEWAY,DONE,STATIC,PRCLONING>
- recvpipe  sendpipe  ssthresh  rtt,msec    rttvar  hopcount      mtu     expire
-       0         0         0         0         0         0      1500         0
-`)
-	randomData := []byte(`
-test
-Lorem ipsum dolor sit amet, consectetur adipiscing elit,
-sed do eiusmod tempor incididunt ut labore et dolore magna
-aliqua. Ut enim ad minim veniam, quis nostrud exercitation
-`)
-	noRoute := []byte(`
-   route to: 0.0.0.0
-destination: default
-       mask: default
-`)
-	badRoute := []byte(`
-   route to: 0.0.0.0
-destination: default
-       mask: default
-    gateway: foo
-  interface: en0
-      flags: <UP,GATEWAY,DONE,STATIC,PRCLONING>
- recvpipe  sendpipe  ssthresh  rtt,msec    rttvar  hopcount      mtu     expire
-       0         0         0         0         0         0      1500         0
-`)
-
-	testcases := []testcase{
-		{correctData, true, "172.16.32.1"},
-		{randomData, false, ""},
-		{noRoute, false, ""},
-		{badRoute, false, ""},
+	// Note that even if the value in the gateway column if rubbish like "foo"
+	// the interface name can still be looked up
+	interfaceTestCases := []ifaceTestCase{
+		{darwin, "en0", true, "192.168.1.254"},
+		{freeBSD, "ena0", true, "10.88.88.2"},
+		{netBSD, "ena0", true, "172.31.16.1"},
+		{solaris, "net0", true, "172.16.32.1"},
+		{randomData, "", false, ""},
+		{darwinNoRoute, "", false, ""},
+		{darwinBadRoute, "en0", true, "192.168.1.254"},
+		{freeBSDNoRoute, "", false, ""},
+		{freeBSDBadRoute, "ena0", true, "10.88.88.2"},
+		{netBSDNoRoute, "", false, ""},
+		{netBSDBadRoute, "ena0", true, "172.31.16.1"},
+		{solarisNoRoute, "", false, ""},
+		{solarisBadRoute, "net0", true, "172.16.32.1"},
 	}
 
-	test(t, testcases, parseDarwinRouteGet)
+	t.Run("parseUnixInterfaceIP", func(t *testing.T) {
+		testInterfaceAddress(t, interfaceTestCases, parseUnixInterfaceIPImpl)
+	})
 }
 
-func TestParseDarwinNetstat(t *testing.T) {
-	correctDataDarwin := []byte(`
-Internet:
-Destination        Gateway            Flags           Netif Expire
-default            link#17            UCSg            utun3
-default            192.168.1.254      UGScIg            en0
-`)
-	randomData := []byte(`
-test
-Lorem ipsum dolor sit amet, consectetur adipiscing elit,
-sed do eiusmod tempor incididunt ut labore et dolore magna
-aliqua. Ut enim ad minim veniam, quis nostrud exercitation
-`)
-
-	noRoute := []byte(`
-Internet:
-Destination        Gateway            Flags      Netif Expire
-10.88.88.0/24      link#1             U           em0
-10.88.88.148       link#1             UHS         lo0
-127.0.0.1          link#2             UH          lo0
-`)
-
-	badRoute := []byte(`
-Internet:
-Destination        Gateway            Flags      Netif Expire
-default            foo                UGS         em0
-10.88.88.0/24      link#1             U           em0
-10.88.88.148       link#1             UHS         lo0
-127.0.0.1          link#2             UH          lo0
-`)
-
-	testcases := []testcase{
-		{correctDataDarwin, true, "192.168.1.254"},
-		{randomData, false, ""},
-		{noRoute, false, ""},
-		{badRoute, false, ""},
-	}
-
-	test(t, testcases, parseDarwinNetstat)
-}
-
-func test(t *testing.T, testcases []testcase, fn func([]byte) (net.IP, error)) {
+func testGatewayAddress(t *testing.T, testcases []ipTestCase, fn func([]byte) (net.IP, error)) {
 	for i, tc := range testcases {
-		net, err := fn(tc.output)
+		t.Run(tc.tableName, func(t *testing.T) {
+			net, err := fn(routeTables[tc.tableName])
+			if tc.ok {
+				if err != nil {
+					t.Errorf("Unexpected error in test #%d: %v", i, err)
+				}
+				if net.String() != tc.ifaceIP {
+					t.Errorf("Unexpected gateway address %v != %s", net, tc.ifaceIP)
+				}
+			} else if err == nil {
+				t.Errorf("Unexpected nil error in test #%d", i)
+			}
+		})
+	}
+}
+
+func testInterfaceAddress(t *testing.T, testcases []ifaceTestCase, fn func([]byte, interfaceGetter) (net.IP, error)) {
+	for i, tc := range testcases {
+		mockGetter := newMockinterfaceGetter(t)
+
 		if tc.ok {
-			if err != nil {
-				t.Errorf("Unexpected error in test #%d: %v", i, err)
-			}
-			if net.String() != tc.gateway {
-				t.Errorf("Unexpected gateway address %v != %s", net, tc.gateway)
-			}
-		} else if err == nil {
-			t.Errorf("Unexpected nil error in test #%d", i)
+			// If the test is exepected to pass, i.e. return an interface IP,
+			// then these methods must be called with the given arguments.
+			//
+			// Mock assertions will ensure they are called (or not if they're not supposed to be)
+			mockGetter.On("InterfaceByName", tc.ifaceName).Return(&net.Interface{}, nil)
+			mockGetter.On("Addrs", mock.AnythingOfType("*net.Interface")).Return([]net.Addr{
+				&net.IPNet{
+					IP:   net.ParseIP("fe80::42:66ff:fe89:8a6b"),
+					Mask: net.IPMask{},
+				},
+				&net.IPNet{
+					IP:   net.ParseIP(tc.ifaceIP),
+					Mask: net.IPMask{},
+				},
+			}, nil)
 		}
+
+		t.Run(tc.tableName, func(t *testing.T) {
+			net, err := fn(routeTables[tc.tableName], mockGetter)
+			if tc.ok {
+				if err != nil {
+					t.Errorf("Unexpected error in test #%d: %v", i, err)
+				}
+				if net.String() != tc.ifaceIP {
+					t.Errorf("Unexpected interface address %v != %s", net, tc.ifaceIP)
+				}
+			} else if err == nil {
+				t.Errorf("Unexpected nil error in test #%d", i)
+			}
+		})
+	}
+}
+
+func TestFlagsContain(t *testing.T) {
+	type testcase struct {
+		flags           string
+		required        []string
+		expectectResult bool
+	}
+
+	testcases := []testcase{
+		{"UGS", []string{"U", "G"}, true},
+		{"UH", []string{"U", "G"}, false},
+		{"U", []string{"U", "G"}, false},
+		{"UHS", []string{"U", "G"}, false},
+		{"UHl", []string{"U", "G"}, false},
+		{"UGScIg", []string{"U", "G"}, true},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(fmt.Sprintf("%s: %s is %v", testcase.flags, strings.Join(testcase.required, ","), testcase.expectectResult), func(t *testing.T) {
+			if !flagsContain(testcase.flags, testcase.required...) == testcase.expectectResult {
+				t.Errorf("Expected %s to contain %v", testcase.flags, testcase.required)
+			}
+		})
+	}
+}
+
+func TestDiscoverFields(t *testing.T) {
+
+	type testcase struct {
+		name       string
+		routeTable []byte
+	}
+
+	testcases := []testcase{
+		{"darwin", routeTables[darwin]},
+		{"FreeBSD", routeTables[freeBSD]},
+		{"NetBSD", routeTables[netBSD]},
+		{"Solaris", routeTables[solaris]},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(testcase.name, func(t *testing.T) {
+			lineNo, _ := discoverFields(testcase.routeTable)
+
+			if lineNo == -1 {
+				t.Error("Could not parse route table fields")
+			}
+		})
 	}
 }
 
