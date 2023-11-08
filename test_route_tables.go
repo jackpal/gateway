@@ -2,29 +2,38 @@
 package gateway
 
 const (
+	darwin           = "darwin"
 	darwinBadRoute   = "darwinBadRoute"
 	darwinNoRoute    = "darwinNoRoute"
-	darwin           = "darwin"
+	freeBSD          = "freeBSD"
 	freeBSDBadRoute  = "freeBSDBadRoute"
 	freeBSDNoRoute   = "freeBSDNoRoute"
-	freeBSD          = "freeBSD"
-	linuxNoRoute     = "linuxNoRoute"
 	linux            = "linux"
+	linuxNoRoute     = "linuxNoRoute"
+	netBSD           = "netBSD"
 	netBSDBadRoute   = "netBSDBadRoute"
 	netBSDNoRoute    = "netBSDNoRoute"
-	netBSD           = "netBSD"
 	randomData       = "randomData"
+	solaris          = "solaris"
 	solarisBadRoute  = "solarisBadRoute"
 	solarisNoRoute   = "solarisNoRoute"
-	solaris          = "solaris"
+	windows          = "windows"
 	windowsBadRoute1 = "windowsBadRoute1"
 	windowsBadRoute2 = "windowsBadRoute2"
 	windowsLocalized = "windowsLocalized"
 	windowsNoRoute   = "windowsNoRoute"
-	windows          = "windows"
 )
 
 var routeTables = map[string][]byte{
+	darwin: []byte(`
+Routing tables
+
+Internet:
+Destination        Gateway            Flags           Netif Expire
+default            link#17            UCSg            utun3
+default            192.168.1.254      UGScIg            en0
+                            `),
+
 	darwinBadRoute: []byte(`
 Routing tables
 
@@ -42,36 +51,6 @@ Routing tables
 Internet:
 Destination        Gateway            Flags      Netif Expire
 10.88.88.0/24      link#1             U           en0
-10.88.88.148       link#1             UHS         lo0
-127.0.0.1          link#2             UH          lo0
-`),
-
-	darwin: []byte(`
-Routing tables
-
-Internet:
-Destination        Gateway            Flags           Netif Expire
-default            link#17            UCSg            utun3
-default            192.168.1.254      UGScIg            en0
-                            `),
-
-	freeBSDBadRoute: []byte(`
-Routing tables
-
-Internet:
-Destination        Gateway            Flags      Netif Expire
-default            foo                UGS        ena0
-10.88.88.0/24      link#1             U          ena0
-10.88.88.148       link#1             UHS         lo0
-127.0.0.1          link#2             UH          lo0
-`),
-
-	freeBSDNoRoute: []byte(`
-Routing tables
-
-Internet:
-Destination        Gateway            Flags      Netif Expire
-10.88.88.0/24      link#1             U          ena0
 10.88.88.148       link#1             UHS         lo0
 127.0.0.1          link#2             UH          lo0
 `),
@@ -99,8 +78,25 @@ fe80::1%%lo0                       link#2                        UHS         lo0
 ff02::/16                         ::1                           UGRS        lo0
 `),
 
-	linuxNoRoute: []byte(`
-Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask            MTU     Window  IRTT
+	freeBSDBadRoute: []byte(`
+Routing tables
+
+Internet:
+Destination        Gateway            Flags      Netif Expire
+default            foo                UGS        ena0
+10.88.88.0/24      link#1             U          ena0
+10.88.88.148       link#1             UHS         lo0
+127.0.0.1          link#2             UH          lo0
+`),
+
+	freeBSDNoRoute: []byte(`
+Routing tables
+
+Internet:
+Destination        Gateway            Flags      Netif Expire
+10.88.88.0/24      link#1             U          ena0
+10.88.88.148       link#1             UHS         lo0
+127.0.0.1          link#2             UH          lo0
 `),
 
 	linux: []byte(`
@@ -112,26 +108,8 @@ wlp4s0	0008A8C0	00000000	0001	0	0	600	00FFFFFF	0	0	0
 wlp4s0	00000000	0108A8C0	0003	0	0	600	00000000	0	0	0
 `),
 
-	netBSDBadRoute: []byte(`
-Routing tables
-
-Internet:
-Destination        Gateway            Flags    Refs      Use    Mtu Interface
-default            foo                UG          -        -   9001  ena0
-127/8              127.0.0.1          UGRS        -        -  33624  lo0
-127.0.0.1          lo0                UHl         -        -  33624  lo0
-`),
-
-	netBSDNoRoute: []byte(`
-Routing tables
-
-Internet:
-Destination        Gateway            Flags    Refs      Use    Mtu Interface
-127/8              127.0.0.1          UGRS        -        -  33624  lo0
-127.0.0.1          lo0                UHl         -        -  33624  lo0
-172.31.16/20       link#1             UC          -        -   9001  ena0
-172.31.22.254      link#1             UHl         -        -      -  lo0
-172.31.16.1        06:fd:6a:57:a9:12  UHL         -        -      -  ena0
+	linuxNoRoute: []byte(`
+Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask            MTU     Window  IRTT
 `),
 
 	netBSD: []byte(`
@@ -170,11 +148,49 @@ ff01:2::/32                             ::1                            UC       
 ff02::%%ena0/32                          link#1                         UC          -        -      -  ena0
 ff02::%%lo0/32                           ::1                            UC          -        -  33624  lo0`),
 
+	netBSDBadRoute: []byte(`
+Routing tables
+
+Internet:
+Destination        Gateway            Flags    Refs      Use    Mtu Interface
+default            foo                UG          -        -   9001  ena0
+127/8              127.0.0.1          UGRS        -        -  33624  lo0
+127.0.0.1          lo0                UHl         -        -  33624  lo0
+`),
+
+	netBSDNoRoute: []byte(`
+Routing tables
+
+Internet:
+Destination        Gateway            Flags    Refs      Use    Mtu Interface
+127/8              127.0.0.1          UGRS        -        -  33624  lo0
+127.0.0.1          lo0                UHl         -        -  33624  lo0
+172.31.16/20       link#1             UC          -        -   9001  ena0
+172.31.22.254      link#1             UHl         -        -      -  lo0
+172.31.16.1        06:fd:6a:57:a9:12  UHL         -        -      -  ena0
+`),
+
 	randomData: []byte(`
 test
 Lorem ipsum dolor sit amet, consectetur adipiscing elit,
 sed do eiusmod tempor incididunt ut labore et dolore magna
 aliqua. Ut enim ad minim veniam, quis nostrud exercitation
+`),
+
+	solaris: []byte(`
+Routing Table: IPv4
+	Destination           Gateway           Flags  Ref     Use     Interface
+-------------------- -------------------- ----- ----- ---------- ---------
+default              172.16.32.1          UG        2      76419 net0
+127.0.0.1            127.0.0.1            UH        2         36 lo0
+172.16.32.0          172.16.32.17         U         4       8100 net0
+
+Routing Table: IPv6
+	Destination/Mask            Gateway                   Flags Ref   Use    If
+--------------------------- --------------------------- ----- --- ------- -----
+::1                         ::1                         UH      3   75382 lo0
+2001:470:deeb:32::/64       2001:470:deeb:32::17        U       3    2744 net0
+fe80::/10                   fe80::6082:52ff:fedc:7df0   U       3    8430 net0
 `),
 
 	solarisBadRoute: []byte(`
@@ -208,20 +224,19 @@ Routing Table: IPv6
 fe80::/10                   fe80::6082:52ff:fedc:7df0   U       3    8430 net0
 `),
 
-	solaris: []byte(`
-Routing Table: IPv4
-	Destination           Gateway           Flags  Ref     Use     Interface
--------------------- -------------------- ----- ----- ---------- ---------
-default              172.16.32.1          UG        2      76419 net0
-127.0.0.1            127.0.0.1            UH        2         36 lo0
-172.16.32.0          172.16.32.17         U         4       8100 net0
-
-Routing Table: IPv6
-	Destination/Mask            Gateway                   Flags Ref   Use    If
---------------------------- --------------------------- ----- --- ------- -----
-::1                         ::1                         UH      3   75382 lo0
-2001:470:deeb:32::/64       2001:470:deeb:32::17        U       3    2744 net0
-fe80::/10                   fe80::6082:52ff:fedc:7df0   U       3    8430 net0
+	windows: []byte(`
+===========================================================================
+Interface List
+  8 ...00 12 3f a7 17 ba ...... Intel(R) PRO/100 VE Network Connection
+  1 ........................... Software Loopback Interface 1
+===========================================================================
+IPv4 Route Table
+===========================================================================
+Active Routes:
+Network Destination        Netmask          Gateway       Interface  Metric
+          0.0.0.0          0.0.0.0       10.88.88.2     10.88.88.149     10
+===========================================================================
+Persistent Routes:
 `),
 
 	windowsBadRoute1: []byte(`
@@ -276,20 +291,5 @@ Interface List
 IPv4 Route Table
 ===========================================================================
 Active Routes:
-`),
-
-	windows: []byte(`
-===========================================================================
-Interface List
-  8 ...00 12 3f a7 17 ba ...... Intel(R) PRO/100 VE Network Connection
-  1 ........................... Software Loopback Interface 1
-===========================================================================
-IPv4 Route Table
-===========================================================================
-Active Routes:
-Network Destination        Netmask          Gateway       Interface  Metric
-          0.0.0.0          0.0.0.0       10.88.88.2     10.88.88.149     10
-===========================================================================
-Persistent Routes:
 `),
 }
