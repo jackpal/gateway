@@ -11,6 +11,8 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -120,6 +122,16 @@ func parseToWindowsRouteStruct(output []byte) (windowsRouteStruct, error) {
 	// I'm trying to pick the active route,
 	// then jump 2 lines and get the row
 	// Not using regex because output is quite standard from Windows XP to 8 (NEEDS TESTING)
+	//
+	// If multiple default gateways are present, then the one with the lowest metric is returned.
+	type gatewayEntry struct {
+		gateway string
+		iface   string
+		metric  int
+	}
+
+	ipRegex := regexp.MustCompile(`^(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4})`)
+	defaultRoutes := make([]gatewayEntry, 0, 2)
 	lines := strings.Split(string(output), "\n")
 	sep := 0
 	for idx, line := range lines {
@@ -129,22 +141,55 @@ func parseToWindowsRouteStruct(output []byte) (windowsRouteStruct, error) {
 				return windowsRouteStruct{}, errNoGateway
 			}
 
-			fields := strings.Fields(lines[idx+2])
-			if len(fields) < 5 {
+			inputLine := lines[idx+2]
+			if strings.HasPrefix(inputLine, "=======") {
+				// End of routes
+				break
+			}
+			fields := strings.Fields(inputLine)
+			if len(fields) < 5 || !ipRegex.MatchString(fields[0]) {
 				return windowsRouteStruct{}, errCantParse
 			}
 
-			return windowsRouteStruct{
-				Gateway:   fields[2],
-				Interface: fields[3],
-			}, nil
+			if fields[0] != "0.0.0.0" {
+				// Routes to 0.0.0.0 are listed first
+				// so we are done
+				break
+			}
+
+			metric, err := strconv.Atoi(fields[4])
+
+			if err != nil {
+				return windowsRouteStruct{}, err
+			}
+
+			defaultRoutes = append(defaultRoutes, gatewayEntry{
+				gateway: fields[2],
+				iface:   fields[3],
+				metric:  metric,
+			})
 		}
 		if strings.HasPrefix(line, "=======") {
 			sep++
 			continue
 		}
 	}
-	return windowsRouteStruct{}, errNoGateway
+
+	if len(defaultRoutes) == 0 {
+		return windowsRouteStruct{}, errNoGateway
+	}
+
+	if len(defaultRoutes) > 1 {
+		// Sort routes by acending metric
+		sort.Slice(defaultRoutes, func(i, j int) bool {
+			return defaultRoutes[i].metric < defaultRoutes[j].metric
+		})
+	}
+
+	return windowsRouteStruct{
+		Gateway:   defaultRoutes[0].gateway,
+		Interface: defaultRoutes[0].iface,
+	}, nil
 }
 
 func parseToLinuxRouteStruct(output []byte) (linuxRouteStruct, error) {
