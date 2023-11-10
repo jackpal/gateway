@@ -102,7 +102,7 @@ ff02::/16                         ::1                           UGRS        lo0
 `),
 
 	linuxNoRoute: []byte(`
-Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask            MTU     Window  IRTT
+Iface	Destination	Gateway	Flags	RefCnt	Use	Metric	Mask	MTU	Window	IRTT
 `),
 
 	linux: []byte(`

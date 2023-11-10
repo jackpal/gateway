@@ -8,7 +8,6 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"net"
 	"regexp"
@@ -138,7 +137,7 @@ func parseToWindowsRouteStruct(output []byte) (windowsRouteStruct, error) {
 		if sep == 3 {
 			// We just entered the 2nd section containing "Active Routes:"
 			if len(lines) <= idx+2 {
-				return windowsRouteStruct{}, errNoGateway
+				return windowsRouteStruct{}, &ErrNoGateway{}
 			}
 
 			inputLine := lines[idx+2]
@@ -148,7 +147,7 @@ func parseToWindowsRouteStruct(output []byte) (windowsRouteStruct, error) {
 			}
 			fields := strings.Fields(inputLine)
 			if len(fields) < 5 || !ipRegex.MatchString(fields[0]) {
-				return windowsRouteStruct{}, errCantParse
+				return windowsRouteStruct{}, &ErrCantParse{}
 			}
 
 			if fields[0] != "0.0.0.0" {
@@ -175,8 +174,13 @@ func parseToWindowsRouteStruct(output []byte) (windowsRouteStruct, error) {
 		}
 	}
 
+	if sep == 0 {
+		// We saw no separator lines, so input must have been garbage.
+		return windowsRouteStruct{}, &ErrCantParse{}
+	}
+
 	if len(defaultRoutes) == 0 {
-		return windowsRouteStruct{}, errNoGateway
+		return windowsRouteStruct{}, &ErrNoGateway{}
 	}
 
 	if len(defaultRoutes) > 1 {
@@ -214,14 +218,19 @@ func parseToLinuxRouteStruct(output []byte) (linuxRouteStruct, error) {
 
 	// Skip header line
 	if !scanner.Scan() {
-		return linuxRouteStruct{}, errors.New("Invalid linux route file")
+		err := scanner.Err()
+		if err == nil {
+			return linuxRouteStruct{}, &ErrNoGateway{}
+		}
+
+		return linuxRouteStruct{}, err
 	}
 
 	for scanner.Scan() {
 		row := scanner.Text()
 		tokens := strings.Split(row, sep)
 		if len(tokens) < 11 {
-			return linuxRouteStruct{}, fmt.Errorf("invalid row %q in route file: doesn't have 11 fields", row)
+			return linuxRouteStruct{}, &ErrInvalidRouteFileFormat{row: row}
 		}
 
 		// The default interface is the one that's 0 for both destination and mask.
@@ -234,7 +243,7 @@ func parseToLinuxRouteStruct(output []byte) (linuxRouteStruct, error) {
 			Gateway: tokens[2],
 		}, nil
 	}
-	return linuxRouteStruct{}, errors.New("interface with default destination not found")
+	return linuxRouteStruct{}, &ErrNoGateway{}
 }
 
 func parseWindowsGatewayIP(output []byte) (net.IP, error) {
@@ -245,7 +254,7 @@ func parseWindowsGatewayIP(output []byte) (net.IP, error) {
 
 	ip := net.ParseIP(parsedOutput.Gateway)
 	if ip == nil {
-		return nil, errCantParse
+		return nil, &ErrCantParse{}
 	}
 	return ip, nil
 }
@@ -258,7 +267,7 @@ func parseWindowsInterfaceIP(output []byte) (net.IP, error) {
 
 	ip := net.ParseIP(parsedOutput.Interface)
 	if ip == nil {
-		return nil, errCantParse
+		return nil, &ErrCantParse{}
 	}
 	return ip, nil
 }
@@ -352,7 +361,7 @@ func parseUnixGatewayIP(output []byte) (net.IP, error) {
 
 	ip := net.ParseIP(parsedStruct.Gateway)
 	if ip == nil {
-		return nil, errCantParse
+		return nil, &ErrCantParse{}
 	}
 
 	return ip, nil
@@ -364,7 +373,7 @@ func parseNetstatToRouteStruct(output []byte) (unixRouteStruct, error) {
 
 	if startLine == -1 {
 		// Unable to find required column headers in netstat output
-		return unixRouteStruct{}, errBadNetstat
+		return unixRouteStruct{}, &ErrCantParse{}
 	}
 
 	outputLines := strings.Split(string(output), "\n")
@@ -390,5 +399,5 @@ func parseNetstatToRouteStruct(output []byte) (unixRouteStruct, error) {
 		}
 	}
 
-	return unixRouteStruct{}, errNoGateway
+	return unixRouteStruct{}, &ErrNoGateway{}
 }

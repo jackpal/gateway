@@ -3,6 +3,7 @@
 package gateway
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -21,6 +22,9 @@ type ipTestCase struct {
 
 	// Dotted IP to assert
 	ifaceIP string
+
+	// Expected error, or nil if none expected
+	expectedError error
 }
 
 // For tests where an interface name is parsed from route table
@@ -36,30 +40,39 @@ type ifaceTestCase struct {
 
 	// Dotted IP to assert
 	ifaceIP string
+
+	// Expected error, or nil if none expected
+	expectedError error
 }
 
 func TestParseWindows(t *testing.T) {
 
 	testcases := []ipTestCase{
-		{windows, true, "10.88.88.2"},
-		{windowsLocalized, true, "10.88.88.2"},
-		{randomData, false, ""},
-		{windowsNoRoute, false, ""},
-		{windowsBadRoute1, false, ""},
-		{windowsBadRoute2, false, ""},
+		{windows, true, "10.88.88.2", nil},
+		{windowsLocalized, true, "10.88.88.2", nil},
+		{windowsMultipleGateways, true, "10.21.38.1", nil},
+		{randomData, false, "", &ErrCantParse{}},
+		{windowsNoRoute, false, "", &ErrNoGateway{}},
+		{windowsNoDefaultRoute, false, "", &ErrNoGateway{}},
+		{windowsBadRoute1, false, "", &ErrCantParse{}},
+		{windowsBadRoute2, false, "", &ErrCantParse{}},
 	}
 
 	t.Run("parseWindowsGatewayIP", func(t *testing.T) {
 		testGatewayAddress(t, testcases, parseWindowsGatewayIP)
 	})
 
+	// Note that even if the value in the gateway column is rubbish like "foo"
+	// the interface name can still be looked up if the dest is 0.0.0.0
 	interfaceTestCases := []ipTestCase{
-		{windows, true, "10.88.88.149"},
-		{windowsLocalized, true, "10.88.88.149"},
-		{randomData, false, ""},
-		{windowsNoRoute, false, ""},
-		{windowsBadRoute1, false, ""},
-		{windowsBadRoute2, true, "10.88.88.149"},
+		{windows, true, "10.88.88.149", nil},
+		{windowsLocalized, true, "10.88.88.149", nil},
+		{windowsMultipleGateways, true, "10.21.38.97", nil},
+		{randomData, false, "", &ErrCantParse{}},
+		{windowsNoRoute, false, "", &ErrNoGateway{}},
+		{windowsNoDefaultRoute, false, "", &ErrNoGateway{}},
+		{windowsBadRoute1, false, "", &ErrCantParse{}},
+		{windowsBadRoute2, true, "10.88.88.149", nil},
 	}
 
 	t.Run("parseWindowsInterfaceIP", func(t *testing.T) {
@@ -68,11 +81,11 @@ func TestParseWindows(t *testing.T) {
 }
 
 func TestParseLinux(t *testing.T) {
-	// Linux ruote tables are extracted from  proc filesystem
+	// Linux route tables are extracted from  proc filesystem
 
 	testcases := []ipTestCase{
-		{linux, true, "192.168.8.1"},
-		{linuxNoRoute, false, ""},
+		{linux, true, "192.168.8.1", nil},
+		{linuxNoRoute, false, "", &ErrNoGateway{}},
 	}
 
 	t.Run("parseLinuxGatewayIP", func(t *testing.T) {
@@ -80,8 +93,8 @@ func TestParseLinux(t *testing.T) {
 	})
 
 	interfaceTestCases := []ifaceTestCase{
-		{linux, "wlp4s0", true, "192.168.2.1"},
-		{linuxNoRoute, "wlp4s0", false, ""},
+		{linux, "wlp4s0", true, "192.168.2.1", nil},
+		{linuxNoRoute, "wlp4s0", false, "", &ErrNoGateway{}},
 	}
 
 	t.Run("parseLinuxInterfaceIP", func(t *testing.T) {
@@ -104,41 +117,41 @@ func TestParseUnix(t *testing.T) {
 	// Unix route tables are extracted from netstat -rn
 
 	testcases := []ipTestCase{
-		{darwin, true, "192.168.1.254"},
-		{freeBSD, true, "10.88.88.2"},
-		{netBSD, true, "172.31.16.1"},
-		{solaris, true, "172.16.32.1"},
-		{randomData, false, ""},
-		{darwinNoRoute, false, ""},
-		{darwinBadRoute, false, ""},
-		{freeBSDNoRoute, false, ""},
-		{freeBSDBadRoute, false, ""},
-		{netBSDNoRoute, false, ""},
-		{netBSDBadRoute, false, ""},
-		{solarisNoRoute, false, ""},
-		{solarisBadRoute, false, ""},
+		{darwin, true, "192.168.1.254", nil},
+		{freeBSD, true, "10.88.88.2", nil},
+		{netBSD, true, "172.31.16.1", nil},
+		{solaris, true, "172.16.32.1", nil},
+		{randomData, false, "", &ErrCantParse{}},
+		{darwinNoRoute, false, "", &ErrNoGateway{}},
+		{darwinBadRoute, false, "", &ErrCantParse{}},
+		{freeBSDNoRoute, false, "", &ErrNoGateway{}},
+		{freeBSDBadRoute, false, "", &ErrCantParse{}},
+		{netBSDNoRoute, false, "", &ErrNoGateway{}},
+		{netBSDBadRoute, false, "", &ErrCantParse{}},
+		{solarisNoRoute, false, "", &ErrNoGateway{}},
+		{solarisBadRoute, false, "", &ErrCantParse{}},
 	}
 
 	t.Run("parseUnixGatewayIP", func(t *testing.T) {
 		testGatewayAddress(t, testcases, parseUnixGatewayIP)
 	})
 
-	// Note that even if the value in the gateway column if rubbish like "foo"
-	// the interface name can still be looked up
+	// Note that even if the value in the gateway column is rubbish like "foo"
+	// the interface name can still be looked up if the dest is 0.0.0.0
 	interfaceTestCases := []ifaceTestCase{
-		{darwin, "en0", true, "192.168.1.254"},
-		{freeBSD, "ena0", true, "10.88.88.2"},
-		{netBSD, "ena0", true, "172.31.16.1"},
-		{solaris, "net0", true, "172.16.32.1"},
-		{randomData, "", false, ""},
-		{darwinNoRoute, "", false, ""},
-		{darwinBadRoute, "en0", true, "192.168.1.254"},
-		{freeBSDNoRoute, "", false, ""},
-		{freeBSDBadRoute, "ena0", true, "10.88.88.2"},
-		{netBSDNoRoute, "", false, ""},
-		{netBSDBadRoute, "ena0", true, "172.31.16.1"},
-		{solarisNoRoute, "", false, ""},
-		{solarisBadRoute, "net0", true, "172.16.32.1"},
+		{darwin, "en0", true, "192.168.1.254", nil},
+		{freeBSD, "ena0", true, "10.88.88.2", nil},
+		{netBSD, "ena0", true, "172.31.16.1", nil},
+		{solaris, "net0", true, "172.16.32.1", nil},
+		{randomData, "", false, "", &ErrCantParse{}},
+		{darwinNoRoute, "", false, "", &ErrNoGateway{}},
+		{darwinBadRoute, "en0", true, "192.168.1.254", &ErrCantParse{}},
+		{freeBSDNoRoute, "", false, "", &ErrNoGateway{}},
+		{freeBSDBadRoute, "ena0", true, "10.88.88.2", nil},
+		{netBSDNoRoute, "", false, "", &ErrNoGateway{}},
+		{netBSDBadRoute, "ena0", true, "172.31.16.1", nil},
+		{solarisNoRoute, "", false, "", &ErrNoGateway{}},
+		{solarisBadRoute, "net0", true, "172.16.32.1", nil},
 	}
 
 	t.Run("parseUnixInterfaceIP", func(t *testing.T) {
@@ -159,6 +172,11 @@ func testGatewayAddress(t *testing.T, testcases []ipTestCase, fn func([]byte) (n
 				}
 			} else if err == nil {
 				t.Errorf("Unexpected nil error in test #%d", i)
+			} else if errors.Is(err, tc.expectedError) {
+				// Correct error was retured
+				return
+			} else {
+				t.Errorf("Expected error of type %T, got %T", tc.expectedError, err)
 			}
 		})
 	}
@@ -197,6 +215,11 @@ func testInterfaceAddress(t *testing.T, testcases []ifaceTestCase, fn func([]byt
 				}
 			} else if err == nil {
 				t.Errorf("Unexpected nil error in test #%d", i)
+			} else if errors.Is(err, tc.expectedError) {
+				// Correct error was retured
+				return
+			} else {
+				t.Errorf("Expected error of type %T, got %T", tc.expectedError, err)
 			}
 		})
 	}
