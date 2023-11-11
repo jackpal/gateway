@@ -41,7 +41,7 @@ func discoverGatewayOSSpecific() (ip net.IP, err error) {
 			}
 		}
 	}
-	return nil, errNoGateway
+	return nil, &ErrNoGateway{}
 }
 
 func discoverGatewayInterfaceOSSpecific() (ip net.IP, err error) {
