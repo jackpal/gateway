@@ -40,11 +40,16 @@ Pull requests for other OSs happily considered!
 
 ## Versions
 
+### v1.0.13
+
++ Add tools/check-cross-compile.sh to check that the code compiles for various OSs.
++ Fix compilation errors exposed by tools/check-cross-compile.sh.
+
 ### v1.0.12
 
 + If there are multiple default gateways, Windows now returns the gateway with the lowest metric.
 + Fix solaris build break. (In theory, IDK how to test this easily.)
-+ upgrade to golang 1.21
++ Upgrade to golang 1.21
 + Upgrade golang.org/x/net version, makes dependabot happy. Probably was not any actual security
   issue because gateway doesn't use any of the APIs of golang.org/x/net that had security issues.
 

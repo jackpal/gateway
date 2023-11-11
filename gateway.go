@@ -13,10 +13,10 @@ type ErrNoGateway struct{}
 // ErrCantParse is returned if the route table is garbage.
 type ErrCantParse struct{}
 
-// ErrNotImpemented is returned if your operating system
+// ErrNotImplemented is returned if your operating system
 // is not supported by this package. Please raise an issue
 // to request support.
-type ErrNotImpemented struct{}
+type ErrNotImplemented struct{}
 
 // ErrInvalidRouteFileFormat is returned if the format
 // of /proc/net/route is unexpected on Linux systems.
@@ -33,7 +33,7 @@ func (*ErrCantParse) Error() string {
 	return "can't parse route table"
 }
 
-func (*ErrNotImpemented) Error() string {
+func (*ErrNotImplemented) Error() string {
 	return "not implemented for OS: " + runtime.GOOS
 }
 

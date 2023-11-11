@@ -5,10 +5,16 @@ package gateway
 
 import (
 	"net"
+	"os/exec"
 )
 
+func readNetstat() ([]byte, error) {
+	routeCmd := exec.Command("netstat", "-rn")
+	return routeCmd.CombinedOutput()
+}
+
 func discoverGatewayOSSpecific() (ip net.IP, err error) {
-	bytes, err = readNetstat()
+	bytes, err := readNetstat()
 	if err != nil {
 		return nil, err
 	}
@@ -17,7 +23,7 @@ func discoverGatewayOSSpecific() (ip net.IP, err error) {
 }
 
 func discoverGatewayInterfaceOSSpecific() (ip net.IP, err error) {
-	bytes, err = readNetstat()
+	bytes, err := readNetstat()
 	if err != nil {
 		return nil, err
 	}

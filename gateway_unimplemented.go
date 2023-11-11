@@ -8,9 +8,9 @@ import (
 )
 
 func discoverGatewayOSSpecific() (ip net.IP, err error) {
-	return ip, errNotImplemented
+	return ip, &ErrNotImplemented{}
 }
 
 func discoverGatewayInterfaceOSSpecific() (ip net.IP, err error) {
-	return nil, errNotImplemented
+	return nil, &ErrNotImplemented{}
 }

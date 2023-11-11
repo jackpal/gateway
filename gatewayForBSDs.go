@@ -1,4 +1,4 @@
-//go:build darwin || dragonfly || freebsd || netbsd || openbsd || solaris
+//go:build darwin || dragonfly || freebsd || netbsd || openbsd
 
 package gateway
 
