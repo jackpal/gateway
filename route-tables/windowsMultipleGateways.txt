@@ -1,0 +1,27 @@
+===========================================================================
+Interface List
+ 19...00 05 9a 3c 7a 00 ......Cisco AnyConnect Secure Mobility Client Virtual Miniport Adapter for Windows x64
+ 37...00 15 5d 0e 76 41 ......Hyper-V Virtual Ethernet Adapter
+ 21...cc 15 31 1e 58 08 ......Microsoft Wi-Fi Direct Virtual Adapter
+  9...ce 15 31 1e 58 07 ......Microsoft Wi-Fi Direct Virtual Adapter #2
+  6...cc 15 31 1e 58 07 ......Intel(R) Wi-Fi 6 AX201 160MHz
+ 17...cc 15 31 1e 58 0b ......Bluetooth Device (Personal Area Network)
+  1...........................Software Loopback Interface 1
+===========================================================================
+
+IPv4 Route Table
+===========================================================================
+Active Routes:
+Network Destination        Netmask          Gateway       Interface  Metric
+          0.0.0.0          0.0.0.0    192.168.100.1   192.168.100.74     50
+          0.0.0.0          0.0.0.0       10.21.38.1      10.21.38.97      2
+===========================================================================
+Persistent Routes:
+  None
+
+IPv6 Route Table
+===========================================================================
+Active Routes:
+  None
+Persistent Routes:
+  None
