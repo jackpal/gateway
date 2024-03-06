@@ -121,6 +121,7 @@ func TestParseUnix(t *testing.T) {
 		{freeBSD, true, "10.88.88.2", nil},
 		{netBSD, true, "172.31.16.1", nil},
 		{solaris, true, "172.16.32.1", nil},
+		{solarisNoInterface, true, "172.16.32.1", nil},
 		{randomData, false, "", &ErrCantParse{}},
 		{darwinNoRoute, false, "", &ErrNoGateway{}},
 		{darwinBadRoute, false, "", &ErrCantParse{}},
@@ -143,6 +144,7 @@ func TestParseUnix(t *testing.T) {
 		{freeBSD, "ena0", true, "10.88.88.2", nil},
 		{netBSD, "ena0", true, "172.31.16.1", nil},
 		{solaris, "net0", true, "172.16.32.1", nil},
+		{solarisNoInterface, "", true, "172.16.32.1", nil},
 		{randomData, "", false, "", &ErrCantParse{}},
 		{darwinNoRoute, "", false, "", &ErrNoGateway{}},
 		{darwinBadRoute, "en0", true, "192.168.1.254", &ErrCantParse{}},
@@ -262,6 +264,7 @@ func TestDiscoverFields(t *testing.T) {
 		{"FreeBSD", routeTables[freeBSD]},
 		{"NetBSD", routeTables[netBSD]},
 		{"Solaris", routeTables[solaris]},
+		{"Illumos", routeTables[solarisNoInterface]},
 	}
 
 	for _, testcase := range testcases {
