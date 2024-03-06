@@ -390,8 +390,12 @@ func parseNetstatToRouteStruct(output []byte) (unixRouteStruct, error) {
 		}
 
 		if fields[nsFields[ns_destination]] == "default" && flagsContain(fields[nsFields[ns_flags]], "U", "G") {
+			iface := ""
+			if ifaceIdx := nsFields[ns_netif]; ifaceIdx < len(fields) {
+				iface = fields[nsFields[ns_netif]]
+			}
 			return unixRouteStruct{
-				Iface:   fields[nsFields[ns_netif]],
+				Iface:   iface,
 				Gateway: fields[nsFields[ns_gateway]],
 			}, nil
 		}
