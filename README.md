@@ -31,7 +31,7 @@ Provides implementations for:
 + Linux
 + NetBSD
 + OpenBSD
-+ Solaris
++ Solaris and illumos
 + Windows
 
 Other platforms use an implementation that always returns an error.
@@ -39,6 +39,10 @@ Other platforms use an implementation that always returns an error.
 Pull requests for other OSs happily considered!
 
 ## Versions
+
+### v1.0.14
+
++ [Fix panic when interface not set in Solaris `netstat -rn` output.](https://github.com/jackpal/gateway/pull/42)
 
 ### v1.0.13
 
