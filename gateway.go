@@ -43,6 +43,15 @@ func (e *ErrInvalidRouteFileFormat) Error() string {
 
 // DiscoverGateway is the OS independent function to get the default gateway
 func DiscoverGateway() (ip net.IP, err error) {
+	ips, err := DiscoverGateways()
+	if err != nil {
+		return nil, err
+	}
+	return ips[0], nil
+}
+
+// DiscoverGateways is the OS independent function to get all gateways
+func DiscoverGateways() (ips []net.IP, err error) {
 	return discoverGatewayOSSpecific()
 }
 

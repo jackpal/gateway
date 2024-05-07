@@ -161,14 +161,15 @@ func TestParseUnix(t *testing.T) {
 	})
 }
 
-func testGatewayAddress(t *testing.T, testcases []ipTestCase, fn func([]byte) (net.IP, error)) {
+func testGatewayAddress(t *testing.T, testcases []ipTestCase, fn func([]byte) ([]net.IP, error)) {
 	for i, tc := range testcases {
 		t.Run(tc.tableName, func(t *testing.T) {
-			net, err := fn(routeTables[tc.tableName])
+			nets, err := fn(routeTables[tc.tableName])
 			if tc.ok {
 				if err != nil {
 					t.Errorf("Unexpected error in test #%d: %v", i, err)
 				}
+				net := nets[0]
 				if net.String() != tc.ifaceIP {
 					t.Errorf("Unexpected gateway address %v != %s", net, tc.ifaceIP)
 				}
