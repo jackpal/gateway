@@ -263,6 +263,9 @@ func parseWindowsGatewayIPs(output []byte) ([]net.IP, error) {
 
 	result := make([]net.IP, 0, len(parsedOutputs))
 	for _, parsedOutput := range parsedOutputs {
+		if strings.EqualFold(parsedOutput.Gateway, "On-link") {
+			continue
+		}
 		ip := net.ParseIP(parsedOutput.Gateway)
 		if ip == nil {
 			return nil, &ErrCantParse{}
