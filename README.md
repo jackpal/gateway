@@ -40,6 +40,10 @@ Pull requests for other OSs happily considered!
 
 ## Versions
 
+### v1.1.1
+
++ Filter out On-link gateways. This is a Windows-specific feature. On-link gateways aren't currently connected to the Internet.
+
 ### v1.1.0
 
 + Add `func DiscoverGateways() ([]net.IP, error)`. This func returns an array of gateways that contains at least one gateway. Otherwise returns an error.
