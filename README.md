@@ -40,6 +40,12 @@ Pull requests for other OSs happily considered!
 
 ## Versions
 
+### v1.1.0
+
++ Add `func DiscoverGateways() ([]net.IP, error)`. This func returns an array of gateways that contains at least one gateway. Otherwise returns an error.
++ Update to go version 1.24.2
++ Upate dependencies to latest versions. (There was an x/net security warning.)
+
 ### v1.0.16
 
 Update x/net dependency. This was done to squelch a github security
