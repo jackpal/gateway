@@ -40,6 +40,23 @@ Pull requests for other OSs happily considered!
 
 ## Versions
 
+### v1.1.0
+
++ Add `func DiscoverGateways() ([]net.IP, error)`. This func returns an array of gateways that contains at least one gateway. Otherwise returns an error.
++ Update to go version 1.24.2
++ Update dependencies to latest versions. (There was an x/net security warning.)
+
+### v1.0.16
+
+Update x/net dependency. This was done to squelch a github security
+alert caused by depending upon an old version of x/net.
+
+### v1.0.15
+
+Update dependencies to latest versions. This was done to squelch a github security
+alert caused by depending upon an old version of x/net. This is the first time I've
+updated module versions, the tests pass, so hopefully everything's good.
+
 ### v1.0.14
 
 + [Fix panic when interface not set in Solaris `netstat -rn` output.](https://github.com/jackpal/gateway/pull/42)

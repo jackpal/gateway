@@ -7,7 +7,7 @@ import (
 	"net"
 )
 
-func discoverGatewayOSSpecific() (ips []net.IP, err error) {
+func discoverGatewaysOSSpecific() (ips []net.IP, err error) {
 	return nil, &ErrNotImplemented{}
 }
 
