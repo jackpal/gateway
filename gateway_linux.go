@@ -30,7 +30,7 @@ func readRoutes() ([]byte, error) {
 	return bytes, nil
 }
 
-func discoverGatewayOSSpecific() (ip net.IP, err error) {
+func discoverGatewayOSSpecific() (ips []net.IP, err error) {
 	bytes, err := readRoutes()
 	if err != nil {
 		return nil, err

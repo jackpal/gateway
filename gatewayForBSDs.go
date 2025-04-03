@@ -15,7 +15,7 @@ func readNetstat() ([]byte, error) {
 	return routeCmd.CombinedOutput()
 }
 
-func discoverGatewayOSSpecific() (ip net.IP, err error) {
+func discoverGatewayOSSpecific() (ips []net.IP, err error) {
 	rib, err := route.FetchRIB(syscall.AF_INET, syscall.NET_RT_DUMP, 0)
 	if err != nil {
 		return nil, err
@@ -26,6 +26,7 @@ func discoverGatewayOSSpecific() (ip net.IP, err error) {
 		return nil, err
 	}
 
+	var result []net.IP
 	for _, m := range msgs {
 		switch m := m.(type) {
 		case *route.RouteMessage:
@@ -33,15 +34,18 @@ func discoverGatewayOSSpecific() (ip net.IP, err error) {
 			switch sa := m.Addrs[syscall.RTAX_GATEWAY].(type) {
 			case *route.Inet4Addr:
 				ip = net.IPv4(sa.IP[0], sa.IP[1], sa.IP[2], sa.IP[3])
-				return ip, nil
+				result = append(result, ip)
 			case *route.Inet6Addr:
 				ip = make(net.IP, net.IPv6len)
 				copy(ip, sa.IP[:])
-				return ip, nil
+				result = append(result, ip)
 			}
 		}
 	}
-	return nil, &ErrNoGateway{}
+	if len(result) == 0 {
+		return nil, &ErrNoGateway{}
+	}
+	return result, nil
 }
 
 func discoverGatewayInterfaceOSSpecific() (ip net.IP, err error) {

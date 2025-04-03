@@ -7,8 +7,8 @@ import (
 	"net"
 )
 
-func discoverGatewayOSSpecific() (ip net.IP, err error) {
-	return ip, &ErrNotImplemented{}
+func discoverGatewayOSSpecific() (ips []net.IP, err error) {
+	return nil, &ErrNotImplemented{}
 }
 
 func discoverGatewayInterfaceOSSpecific() (ip net.IP, err error) {
