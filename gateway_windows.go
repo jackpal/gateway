@@ -9,7 +9,7 @@ import (
 	"syscall"
 )
 
-func discoverGatewayOSSpecific() (ips []net.IP, err error) {
+func discoverGatewaysOSSpecific() (ips []net.IP, err error) {
 	routeCmd := exec.Command("route", "print", "0.0.0.0")
 	routeCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	output, err := routeCmd.CombinedOutput()
@@ -17,7 +17,7 @@ func discoverGatewayOSSpecific() (ips []net.IP, err error) {
 		return nil, err
 	}
 
-	return parseWindowsGatewayIP(output)
+	return parseWindowsGatewayIPs(output)
 }
 
 func discoverGatewayInterfaceOSSpecific() (ip net.IP, err error) {

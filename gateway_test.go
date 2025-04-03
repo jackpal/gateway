@@ -58,8 +58,8 @@ func TestParseWindows(t *testing.T) {
 		{windowsBadRoute2, false, "", &ErrCantParse{}},
 	}
 
-	t.Run("parseWindowsGatewayIP", func(t *testing.T) {
-		testGatewayAddress(t, testcases, parseWindowsGatewayIP)
+	t.Run("parseWindowsGatewayIPs", func(t *testing.T) {
+		testGatewayAddress(t, testcases, parseWindowsGatewayIPs)
 	})
 
 	// Note that even if the value in the gateway column is rubbish like "foo"
@@ -88,8 +88,8 @@ func TestParseLinux(t *testing.T) {
 		{linuxNoRoute, false, "", &ErrNoGateway{}},
 	}
 
-	t.Run("parseLinuxGatewayIP", func(t *testing.T) {
-		testGatewayAddress(t, testcases, parseLinuxGatewayIP)
+	t.Run("parseLinuxGatewayIPs", func(t *testing.T) {
+		testGatewayAddress(t, testcases, parseLinuxGatewayIPs)
 	})
 
 	interfaceTestCases := []ifaceTestCase{
@@ -133,8 +133,8 @@ func TestParseUnix(t *testing.T) {
 		{solarisBadRoute, false, "", &ErrCantParse{}},
 	}
 
-	t.Run("parseUnixGatewayIP", func(t *testing.T) {
-		testGatewayAddress(t, testcases, parseUnixGatewayIP)
+	t.Run("parseUnixGatewayIPs", func(t *testing.T) {
+		testGatewayAddress(t, testcases, parseUnixGatewayIPs)
 	})
 
 	// Note that even if the value in the gateway column is rubbish like "foo"

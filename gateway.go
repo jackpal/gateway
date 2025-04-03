@@ -50,9 +50,10 @@ func DiscoverGateway() (ip net.IP, err error) {
 	return ips[0], nil
 }
 
-// DiscoverGateways is the OS independent function to get all gateways
+// DiscoverGateways is the OS independent function to get all gateways.
+// If err is nil, then ips is guarenteed to have at least one element.
 func DiscoverGateways() (ips []net.IP, err error) {
-	return discoverGatewayOSSpecific()
+	return discoverGatewaysOSSpecific()
 }
 
 // DiscoverInterface is the OS independent function to call to get the default network interface IP that uses the default gateway

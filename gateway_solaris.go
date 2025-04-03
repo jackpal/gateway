@@ -13,13 +13,13 @@ func readNetstat() ([]byte, error) {
 	return routeCmd.CombinedOutput()
 }
 
-func discoverGatewayOSSpecific() (ips []net.IP, err error) {
+func discoverGatewaysOSSpecific() (ips []net.IP, err error) {
 	bytes, err := readNetstat()
 	if err != nil {
 		return nil, err
 	}
 
-	return parseUnixGatewayIP(bytes)
+	return parseUnixGatewayIPs(bytes)
 }
 
 func discoverGatewayInterfaceOSSpecific() (ip net.IP, err error) {

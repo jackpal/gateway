@@ -201,7 +201,7 @@ func parseToWindowsRouteStruct(output []byte) ([]windowsRouteStruct, error) {
 	return result, nil
 }
 
-func parseToLinuxRouteStruct(output []byte) ([]linuxRouteStruct, error) {
+func parseToLinuxRouteStructs(output []byte) ([]linuxRouteStruct, error) {
 	// parseLinuxProcNetRoute parses the route file located at /proc/net/route
 	// and returns the IP address of the default gateway. The default gateway
 	// is the one with Destination value of 0.0.0.0.
@@ -255,7 +255,7 @@ func parseToLinuxRouteStruct(output []byte) ([]linuxRouteStruct, error) {
 	return result, nil
 }
 
-func parseWindowsGatewayIP(output []byte) ([]net.IP, error) {
+func parseWindowsGatewayIPs(output []byte) ([]net.IP, error) {
 	parsedOutputs, err := parseToWindowsRouteStruct(output)
 	if err != nil {
 		return nil, err
@@ -289,8 +289,8 @@ func parseWindowsInterfaceIP(output []byte) ([]net.IP, error) {
 	return result, nil
 }
 
-func parseLinuxGatewayIP(output []byte) ([]net.IP, error) {
-	parsedStructs, err := parseToLinuxRouteStruct(output)
+func parseLinuxGatewayIPs(output []byte) ([]net.IP, error) {
+	parsedStructs, err := parseToLinuxRouteStructs(output)
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +321,7 @@ func parseLinuxInterfaceIP(output []byte) (net.IP, error) {
 
 func parseLinuxInterfaceIPImpl(output []byte, ifaceGetter interfaceGetter) (net.IP, error) {
 	// Mockable implemenation
-	parsedStructs, err := parseToLinuxRouteStruct(output)
+	parsedStructs, err := parseToLinuxRouteStructs(output)
 	if err != nil {
 		return nil, err
 	}
@@ -373,7 +373,7 @@ func getInterfaceIP4(name string, ifaceGetter interfaceGetter) (net.IP, error) {
 		name)
 }
 
-func parseUnixGatewayIP(output []byte) ([]net.IP, error) {
+func parseUnixGatewayIPs(output []byte) ([]net.IP, error) {
 	// Extract default gateway IP from netstat route table
 	parsedStructs, err := parseNetstatToRouteStruct(output)
 	if err != nil {

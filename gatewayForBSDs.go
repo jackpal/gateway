@@ -15,7 +15,7 @@ func readNetstat() ([]byte, error) {
 	return routeCmd.CombinedOutput()
 }
 
-func discoverGatewayOSSpecific() (ips []net.IP, err error) {
+func discoverGatewaysOSSpecific() (ips []net.IP, err error) {
 	rib, err := route.FetchRIB(syscall.AF_INET, syscall.NET_RT_DUMP, 0)
 	if err != nil {
 		return nil, err
