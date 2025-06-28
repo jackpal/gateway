@@ -15,7 +15,7 @@ go test ./...
 # Check that the library builds on all supported OSs.
 #
 # Note that "plan9" is in this list to test gateway_unimplemented.go
-for os in "darwin" "dragonfly" "freebsd" "netbsd" "openbsd" "plan9" "solaris" "windows"
+for os in "android" "darwin" "dragonfly" "freebsd" "netbsd" "openbsd" "plan9" "solaris" "windows"
 do
     GOOS=${os} GOARCH=amd64 go build
 done
