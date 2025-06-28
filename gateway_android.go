@@ -4,18 +4,26 @@
 package gateway
 
 import (
-    "net"
-    "os/exec"
-    "strings"
+	"fmt"
+	"io"
+	"net"
+	"os"
+	"os/exec"
+	"strings"
+)
+
+const (
+	// See http://man7.org/linux/man-pages/man8/route.8.html
+	file  = "/proc/net/route"
 )
 
 func discoverGatewaysOSSpecific() (ips []net.IP, err error) {
-	ips, err = discoverGatewayUsingRoute()
+	ips, err = wrapIP(discoverGatewayUsingRoute())
 	if err != nil {
-		ips, err = discoverGatewayUsingIpRouteShow()
+		ips, err = wrapIP(discoverGatewayUsingIpRouteShow())
 	}
 	if err != nil {
-		ips, err = discoverGatewayUsingIpRouteGet()
+		ips, err = wrapIP(discoverGatewayUsingIpRouteGet())
 	}
 	return
 }
@@ -48,6 +56,29 @@ func discoverGatewayUsingRoute() (net.IP, error) {
 	}
 
 	return parseLinuxRoute(output)
+}
+
+func readRoutes() ([]byte, error) {
+	f, err := os.Open(file)
+	if err != nil {
+		return nil, fmt.Errorf("can't access %s", file)
+	}
+	defer f.Close()
+
+	bytes, err := io.ReadAll(f)
+	if err != nil {
+		return nil, fmt.Errorf("can't read %s", file)
+	}
+
+	return bytes, nil
+}
+
+func discoverGatewayInterfaceOSSpecific() (ip net.IP, err error) {
+	bytes, err := readRoutes()
+	if err != nil {
+		return nil, err
+	}
+	return parseLinuxInterfaceIP(bytes)
 }
 
 func parseLinuxIPRouteGet(output []byte) (net.IP, error) {
@@ -84,4 +115,11 @@ func parseLinuxRoute(output []byte) (net.IP, error) {
 	}
 
 	return nil, &ErrNoGateway{}
+}
+
+func wrapIP(ip net.IP, err error) ([]net.IP, error) {
+    if err != nil {
+        return nil, err
+    }
+    return []net.IP{ip}, nil
 }
