@@ -1,5 +1,5 @@
-//go:build linux
-// +build linux
+//go:build !android && linux
+// +build !android,linux
 
 package gateway
 
