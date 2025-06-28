@@ -435,3 +435,21 @@ func parseNetstatToRouteStruct(output []byte) ([]unixRouteStruct, error) {
 	}
 	return result, nil
 }
+
+func parseLinuxIPRouteShow(output []byte) (net.IP, error) {
+	// Linux '/usr/bin/ip route show' format looks like this:
+	// default via 192.168.178.1 dev wlp3s0  metric 303
+	// 192.168.178.0/24 dev wlp3s0  proto kernel  scope link  src 192.168.178.76  metric 303
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		if len(fields) >= 3 && fields[0] == "default" {
+			ip := net.ParseIP(fields[2])
+			if ip != nil {
+				return ip, nil
+			}
+		}
+	}
+
+	return nil, &ErrNoGateway{}
+}
