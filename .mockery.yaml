@@ -6,5 +6,6 @@ packages:
       interfaceGetter:
         config:
           mockName: "{{.Mock}}{{.InterfaceName}}"
+          filename: "mock_{{.InterfaceName}}_test.go"
           inpackage: true
           dir: "{{.InterfaceDir}}"
