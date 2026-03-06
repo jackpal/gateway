@@ -272,6 +272,9 @@ func parseWindowsGatewayIPs(output []byte) ([]net.IP, error) {
 		}
 		result = append(result, ip)
 	}
+	if len(result) == 0 {
+		return nil, &ErrNoGateway{}
+	}
 	return result, nil
 }
 

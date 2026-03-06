@@ -2,29 +2,30 @@
 package gateway
 
 const (
-	darwinBadRoute          = "darwinBadRoute"
-	darwinNoRoute           = "darwinNoRoute"
-	darwin                  = "darwin"
-	freeBSDBadRoute         = "freeBSDBadRoute"
-	freeBSDNoRoute          = "freeBSDNoRoute"
-	freeBSD                 = "freeBSD"
-	linuxNoRoute            = "linuxNoRoute"
-	linux                   = "linux"
-	netBSDBadRoute          = "netBSDBadRoute"
-	netBSDNoRoute           = "netBSDNoRoute"
-	netBSD                  = "netBSD"
-	randomData              = "randomData"
-	solarisBadRoute         = "solarisBadRoute"
-	solarisNoRoute          = "solarisNoRoute"
-	solaris                 = "solaris"
-	solarisNoInterface      = "solarisNoInterface"
-	windowsBadRoute1        = "windowsBadRoute1"
-	windowsBadRoute2        = "windowsBadRoute2"
-	windowsLocalized        = "windowsLocalized"
-	windowsMultipleGateways = "windowsMultipleGateways"
-	windowsNoDefaultRoute   = "windowsNoDefaultRoute"
-	windowsNoRoute          = "windowsNoRoute"
-	windows                 = "windows"
+	darwinBadRoute            = "darwinBadRoute"
+	darwinNoRoute             = "darwinNoRoute"
+	darwin                    = "darwin"
+	freeBSDBadRoute           = "freeBSDBadRoute"
+	freeBSDNoRoute            = "freeBSDNoRoute"
+	freeBSD                   = "freeBSD"
+	linuxNoRoute              = "linuxNoRoute"
+	linux                     = "linux"
+	netBSDBadRoute            = "netBSDBadRoute"
+	netBSDNoRoute             = "netBSDNoRoute"
+	netBSD                    = "netBSD"
+	randomData                = "randomData"
+	solarisBadRoute           = "solarisBadRoute"
+	solarisNoInterface        = "solarisNoInterface"
+	solarisNoRoute            = "solarisNoRoute"
+	solaris                   = "solaris"
+	windowsBadRoute1          = "windowsBadRoute1"
+	windowsBadRoute2          = "windowsBadRoute2"
+	windowsLocalized          = "windowsLocalized"
+	windowsMultipleGateways   = "windowsMultipleGateways"
+	windowsNoDefaultRoute     = "windowsNoDefaultRoute"
+	windowsNoRoute            = "windowsNoRoute"
+	windowsOnLinkDefaultRoute = "windowsOnLinkDefaultRoute"
+	windows                   = "windows"
 )
 
 var routeTables = map[string][]byte{
@@ -341,6 +342,35 @@ Interface List
 IPv4 Route Table
 ===========================================================================
 Active Routes:
+`),
+
+	windowsOnLinkDefaultRoute: []byte(`
+===========================================================================
+Interface List
+ 43..........................._Common_na_vpn
+ 50...00 42 42 42 42 42 ......Hyper-V Virtual Ethernet Adapter
+ 13...42 42 42 42 42 42 ......Intel(R) Wi-Fi otters #2
+ 10...42 42 42 42 42 48 ......Intel(R) Wi-Fi otters #5
+ 12...42 42 42 42 42 42 ......Intel(R) Wi-Fi otters
+  8...42 42 42 42 42 40 ......Bluetooth Device (Personal Area Network)
+  1...........................Software Loopback Interface 1
+===========================================================================
+
+IPv4 Route Table
+===========================================================================
+Active Routes:
+Network Destination        Netmask          Gateway       Interface  Metric
+          0.0.0.0          0.0.0.0         On-link      192.0.2.5         1
+===========================================================================
+Persistent Routes:
+  None
+
+IPv6 Route Table
+===========================================================================
+Active Routes:
+  None
+Persistent Routes:
+  None
 `),
 
 	windows: []byte(`

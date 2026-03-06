@@ -54,6 +54,7 @@ func TestParseWindows(t *testing.T) {
 		{randomData, false, "", &ErrCantParse{}},
 		{windowsNoRoute, false, "", &ErrNoGateway{}},
 		{windowsNoDefaultRoute, false, "", &ErrNoGateway{}},
+		{windowsOnLinkDefaultRoute, false, "", &ErrNoGateway{}},
 		{windowsBadRoute1, false, "", &ErrCantParse{}},
 		{windowsBadRoute2, false, "", &ErrCantParse{}},
 	}
@@ -71,6 +72,7 @@ func TestParseWindows(t *testing.T) {
 		{randomData, false, "", &ErrCantParse{}},
 		{windowsNoRoute, false, "", &ErrNoGateway{}},
 		{windowsNoDefaultRoute, false, "", &ErrNoGateway{}},
+		{windowsOnLinkDefaultRoute, true, "192.0.2.5", nil},
 		{windowsBadRoute1, false, "", &ErrCantParse{}},
 		{windowsBadRoute2, true, "10.88.88.149", nil},
 	}

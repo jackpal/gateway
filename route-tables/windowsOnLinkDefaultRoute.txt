@@ -1,0 +1,26 @@
+===========================================================================
+Interface List
+ 43..........................._Common_na_vpn
+ 50...00 42 42 42 42 42 ......Hyper-V Virtual Ethernet Adapter
+ 13...42 42 42 42 42 42 ......Intel(R) Wi-Fi otters #2
+ 10...42 42 42 42 42 48 ......Intel(R) Wi-Fi otters #5
+ 12...42 42 42 42 42 42 ......Intel(R) Wi-Fi otters
+  8...42 42 42 42 42 40 ......Bluetooth Device (Personal Area Network)
+  1...........................Software Loopback Interface 1
+===========================================================================
+
+IPv4 Route Table
+===========================================================================
+Active Routes:
+Network Destination        Netmask          Gateway       Interface  Metric
+          0.0.0.0          0.0.0.0         On-link      192.0.2.5         1
+===========================================================================
+Persistent Routes:
+  None
+
+IPv6 Route Table
+===========================================================================
+Active Routes:
+  None
+Persistent Routes:
+  None
