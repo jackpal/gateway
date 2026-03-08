@@ -65,7 +65,7 @@ func TestParseWindows(t *testing.T) {
 	// Note that even if the value in the gateway column is rubbish like "foo"
 	// the interface name can still be looked up if the dest is 0.0.0.0
 	interfaceTestCases := []ipTestCase{
-		{windows, true, "10.88.88.149", nil},
+		{windows, true, "192.168.0.1", nil},
 		{windowsLocalized, true, "10.88.88.149", nil},
 		{windowsMultipleGateways, true, "10.21.38.97", nil},
 		{randomData, false, "", &ErrCantParse{}},
