@@ -50,12 +50,13 @@ func TestParseWindows(t *testing.T) {
 	testcases := []ipTestCase{
 		{windows, true, "10.88.88.2", nil},
 		{windowsLocalized, true, "10.88.88.2", nil},
+		{windowsLocalized2, true, "192.168.100.1", nil},
 		{windowsMultipleGateways, true, "10.21.38.1", nil},
 		{randomData, false, "", &ErrCantParse{}},
 		{windowsNoRoute, false, "", &ErrNoGateway{}},
 		{windowsNoDefaultRoute, false, "", &ErrNoGateway{}},
 		{windowsBadRoute1, false, "", &ErrCantParse{}},
-		{windowsBadRoute2, false, "", &ErrCantParse{}},
+		{windowsBadRoute2, false, "", &ErrNoGateway{}},
 	}
 
 	t.Run("parseWindowsGatewayIPs", func(t *testing.T) {

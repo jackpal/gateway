@@ -1,0 +1,28 @@
+===========================================================================
+ILista de interfaces
+29...........................SGNAutobahn Tunnel
+11...........................SGN Tunnel
+18...01 02 03 04 05 60 ......Microsoft Wi-Fi Direct Virtual Adapter
+ 4...01 02 03 04 05 61 ......Microsoft Wi-Fi Direct Virtual Adapter #2
+10...01 02 03 04 05 62 ......MediaTek Wi-Fi 6E MT7902 Wireless LAN Card
+14...01 02 03 04 05 63 ......Bluetooth Device (Personal Area Network)
+ 1...........................Software Loopback Interface 1
+===========================================================================
+ 
+IPv4 Tabla de enrutamiento
+===========================================================================
+Rutas activas:
+Destino de red        Máscara de red   Puerta de enlace   Interfaz  Métrica
+          0.0.0.0          0.0.0.0    192.168.100.1   192.168.100.80     35
+          0.0.0.0        192.0.0.0      En vínculo       123.45.0.10    250
+===========================================================================
+Rutas persistentes:
+  Ninguno
+ 
+IPv6 Tabla de enrutamiento
+===========================================================================
+Rutas activas:
+  Ninguno
+Rutas persistentes:
+  Ninguno
+
