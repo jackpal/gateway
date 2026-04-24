@@ -148,7 +148,7 @@ func parseToWindowsRouteStruct(output []byte) ([]windowsRouteStruct, error) {
 			}
 			fields := strings.Fields(inputLine)
 			// Some Windows commands are localized, so we need to handle the fields in a logical way.
-			// Baiscally, fields that start with a number will be treated as-is, but consecutive fields
+			// Basically, fields that start with a number will be treated as-is, but consecutive fields
 			// that start with a letter will be combined into a single field.
 			{
 				var logicalFields []string
