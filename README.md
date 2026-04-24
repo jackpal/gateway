@@ -40,6 +40,12 @@ Pull requests for other OSs happily considered!
 
 ## Versions
 
+### v1.1.2
+
++ Fix metric parsing in localized Windows versions (e.g., Spanish).
++ Standardize test file naming (use `_test.go` suffix).
++ Update dependencies and Go version to 1.26.2.
+
 ### v1.1.1
 
 + Filter out On-link gateways. This is a Windows-specific feature. On-link gateways aren't currently connected to the Internet.
