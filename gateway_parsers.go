@@ -403,6 +403,72 @@ func getInterfaceIP4(name string, ifaceGetter interfaceGetter) (net.IP, error) {
 		name)
 }
 
+func parseUnixInterfaceIPv6(output []byte) (net.IP, error) {
+	// Return the first IPv6 address we encounter.
+	return parseUnixInterfaceIPv6Impl(output, &intefaceGetterImpl{})
+}
+
+func parseUnixInterfaceIPv6Impl(output []byte, ifaceGetter interfaceGetter) (net.IP, error) {
+	// Mockable implementation
+	parsedStructs, err := parseNetstatToRouteStruct(output)
+	if err != nil {
+		return nil, err
+	}
+
+	return getInterfaceIP6(parsedStructs[0].Iface, ifaceGetter)
+}
+
+func getInterfaceIP6(name string, ifaceGetter interfaceGetter) (net.IP, error) {
+	// Given interface name and an interface to "net" package
+	// lookup ip6 for the given interface
+	iface, err := ifaceGetter.InterfaceByName(name)
+	if err != nil {
+		return nil, err
+	}
+
+	addrs, err := ifaceGetter.Addrs(iface)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, addr := range addrs {
+		ipnet, ok := addr.(*net.IPNet)
+		if !ok {
+			continue
+		}
+
+		// Skip IPv4 addresses
+		if ipnet.IP.To4() != nil {
+			continue
+		}
+
+		ip := ipnet.IP.To16()
+		if ip != nil && !ip.IsLinkLocalUnicast() {
+			return ip, nil
+		}
+	}
+
+	// Fall back to link-local if no global address found
+	for _, addr := range addrs {
+		ipnet, ok := addr.(*net.IPNet)
+		if !ok {
+			continue
+		}
+
+		if ipnet.IP.To4() != nil {
+			continue
+		}
+
+		ip := ipnet.IP.To16()
+		if ip != nil {
+			return ip, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no IPv6 address found for interface %v",
+		name)
+}
+
 func parseUnixGatewayIPs(output []byte) ([]net.IP, error) {
 	// Extract default gateway IP from netstat route table
 	parsedStructs, err := parseNetstatToRouteStruct(output)

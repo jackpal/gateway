@@ -60,3 +60,23 @@ func DiscoverGateways() (ips []net.IP, err error) {
 func DiscoverInterface() (ip net.IP, err error) {
 	return discoverGatewayInterfaceOSSpecific()
 }
+
+// DiscoverGatewayIPv6 is the OS independent function to get the default IPv6 gateway
+func DiscoverGatewayIPv6() (ip net.IP, err error) {
+	ips, err := DiscoverGatewaysIPv6()
+	if err != nil {
+		return nil, err
+	}
+	return ips[0], nil
+}
+
+// DiscoverGatewaysIPv6 is the OS independent function to get all IPv6 default gateways.
+// If err is nil, then ips is guaranteed to have at least one element.
+func DiscoverGatewaysIPv6() (ips []net.IP, err error) {
+	return discoverGatewaysIPv6OSSpecific()
+}
+
+// DiscoverInterfaceIPv6 is the OS independent function to call to get the default network interface IPv6 address that uses the default gateway
+func DiscoverInterfaceIPv6() (ip net.IP, err error) {
+	return discoverGatewayInterfaceIPv6OSSpecific()
+}

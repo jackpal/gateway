@@ -14,3 +14,11 @@ func discoverGatewaysOSSpecific() (ips []net.IP, err error) {
 func discoverGatewayInterfaceOSSpecific() (ip net.IP, err error) {
 	return nil, &ErrNotImplemented{}
 }
+
+func discoverGatewaysIPv6OSSpecific() (ips []net.IP, err error) {
+	return nil, &ErrNotImplemented{}
+}
+
+func discoverGatewayInterfaceIPv6OSSpecific() (ip net.IP, err error) {
+	return nil, &ErrNotImplemented{}
+}
