@@ -36,9 +36,19 @@ func discoverGatewayInterfaceOSSpecific() (ip net.IP, err error) {
 }
 
 func discoverGatewaysIPv6OSSpecific() (ips []net.IP, err error) {
-	return nil, &ErrNotImplemented{}
+	routeCmd := exec.Command("route", "print", "-6", "::/0")
+	routeCmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	output, err := routeCmd.CombinedOutput()
+	if err != nil {
+		return nil, err
+	}
+
+	return parseWindowsIPv6GatewayIPs(output)
 }
 
 func discoverGatewayInterfaceIPv6OSSpecific() (ip net.IP, err error) {
+	// Windows IPv6 route table uses interface index, not IP.
+	// We would need to resolve the index to an interface name and then to an IP.
+	// For now, return not implemented.
 	return nil, &ErrNotImplemented{}
 }

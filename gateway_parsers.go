@@ -8,6 +8,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"net"
 	"regexp"
@@ -319,6 +320,81 @@ func parseWindowsInterfaceIP(output []byte) ([]net.IP, error) {
 	return result, nil
 }
 
+func parseWindowsIPv6GatewayIPs(output []byte) ([]net.IP, error) {
+	// Windows IPv6 route table format (from 'route print -6'):
+	//
+	// ===========================================================================
+	// IPv6 Route Table
+	// ===========================================================================
+	// Active Routes:
+	//  If Metric Network Destination      Gateway
+	//  12    281  ::/0                    fe80::1
+	//  12    281  ::1/128                 On-link
+	// ===========================================================================
+
+	lines := strings.Split(string(output), "\n")
+	inActiveRoutes := false
+	seen := make(map[string]bool)
+	var result []net.IP
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+
+		if strings.HasPrefix(line, "Active Routes:") || strings.HasPrefix(line, "Rutas activas:") {
+			inActiveRoutes = true
+			continue
+		}
+
+		if !inActiveRoutes {
+			continue
+		}
+
+		// End of active routes section
+		if strings.HasPrefix(line, "====") || strings.HasPrefix(line, "Persistent") || strings.HasPrefix(line, "Rutas persistentes") || line == "" {
+			if len(result) > 0 {
+				break
+			}
+			continue
+		}
+
+		// Skip column header line
+		if strings.HasPrefix(line, "If") {
+			continue
+		}
+
+		fields := strings.Fields(line)
+		if len(fields) < 4 {
+			continue
+		}
+
+		// Fields: If, Metric, Network Destination, Gateway
+		dest := fields[2]
+		gateway := fields[3]
+
+		// Look for default route ::/0
+		if dest != "::/0" {
+			continue
+		}
+
+		// Skip "On-link" or other text gateways
+		ip := net.ParseIP(gateway)
+		if ip == nil {
+			continue
+		}
+
+		key := ip.String()
+		if !seen[key] {
+			seen[key] = true
+			result = append(result, ip)
+		}
+	}
+
+	if len(result) == 0 {
+		return nil, &ErrNoGateway{}
+	}
+	return result, nil
+}
+
 func parseLinuxGatewayIPs(output []byte) ([]net.IP, error) {
 	parsedStructs, err := parseToLinuxRouteStructs(output)
 	if err != nil {
@@ -357,6 +433,107 @@ func parseLinuxInterfaceIPImpl(output []byte, ifaceGetter interfaceGetter) (net.
 	}
 
 	return getInterfaceIP4(parsedStructs[0].Iface, ifaceGetter)
+}
+
+// linuxIPv6RouteStruct represents a parsed entry from /proc/net/ipv6_route
+type linuxIPv6RouteStruct struct {
+	// Name of interface
+	Iface string
+
+	// 32-character hex string representing 128-bit IPv6 address
+	Gateway string
+}
+
+func parseToLinuxIPv6RouteStructs(output []byte) ([]linuxIPv6RouteStruct, error) {
+	// Parse /proc/net/ipv6_route which has the format:
+	//
+	// dest dest_prefix src src_prefix nexthop metric refcnt use flags iface
+	// 00000000000000000000000000000000 00 00000000000000000000000000000000 00 fe800000000000000242acfffe110003 00000064 00000000 00000000 00000003 eth0
+	//
+	// Fields are space-separated. All hex values.
+	// The default route has destination all zeros with prefix length 00.
+	const (
+		destinationField    = 0
+		destinationPrefField = 1
+		gatewayField        = 4
+		ifaceField          = 9
+		allZeros            = "00000000000000000000000000000000"
+	)
+	scanner := bufio.NewScanner(bytes.NewReader(output))
+
+	var result []linuxIPv6RouteStruct
+	for scanner.Scan() {
+		row := scanner.Text()
+		fields := strings.Fields(row)
+		if len(fields) < 10 {
+			continue
+		}
+
+		// Default route: destination is all zeros, prefix length is 00
+		if fields[destinationField] != allZeros || fields[destinationPrefField] != "00" {
+			continue
+		}
+
+		// Skip if gateway is also all zeros (no real gateway)
+		if fields[gatewayField] == allZeros {
+			continue
+		}
+
+		result = append(result, linuxIPv6RouteStruct{
+			Iface:   fields[ifaceField],
+			Gateway: fields[gatewayField],
+		})
+	}
+	if len(result) == 0 {
+		return nil, &ErrNoGateway{}
+	}
+	return result, nil
+}
+
+func parseIPv6Hex(hexStr string) (net.IP, error) {
+	if len(hexStr) != 32 {
+		return nil, fmt.Errorf("invalid IPv6 hex string length: %d", len(hexStr))
+	}
+	b, err := hex.DecodeString(hexStr)
+	if err != nil {
+		return nil, fmt.Errorf("parsing IPv6 hex %q: %w", hexStr, err)
+	}
+	return net.IP(b), nil
+}
+
+func parseLinuxIPv6GatewayIPs(output []byte) ([]net.IP, error) {
+	parsedStructs, err := parseToLinuxIPv6RouteStructs(output)
+	if err != nil {
+		return nil, err
+	}
+
+	seen := make(map[string]bool)
+	result := make([]net.IP, 0, len(parsedStructs))
+	for _, parsedStruct := range parsedStructs {
+		ip, err := parseIPv6Hex(parsedStruct.Gateway)
+		if err != nil {
+			return nil, err
+		}
+		key := ip.String()
+		if !seen[key] {
+			seen[key] = true
+			result = append(result, ip)
+		}
+	}
+	return result, nil
+}
+
+func parseLinuxIPv6InterfaceIP(output []byte) (net.IP, error) {
+	return parseLinuxIPv6InterfaceIPImpl(output, &intefaceGetterImpl{})
+}
+
+func parseLinuxIPv6InterfaceIPImpl(output []byte, ifaceGetter interfaceGetter) (net.IP, error) {
+	parsedStructs, err := parseToLinuxIPv6RouteStructs(output)
+	if err != nil {
+		return nil, err
+	}
+
+	return getInterfaceIP6(parsedStructs[0].Iface, ifaceGetter)
 }
 
 func parseUnixInterfaceIP(output []byte) (net.IP, error) {

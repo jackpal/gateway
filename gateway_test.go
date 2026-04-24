@@ -114,6 +114,28 @@ func TestParseLinux(t *testing.T) {
 	// test(t, interfaceTestCases, parseLinuxInterfaceIP)
 }
 
+func TestParseLinuxIPv6(t *testing.T) {
+	testcases := []ipTestCase{
+		{linuxIPv6, true, "fe80::242:acff:fe11:3", nil},
+		{linuxIPv6NoRoute, false, "", &ErrNoGateway{}},
+	}
+
+	t.Run("parseLinuxIPv6GatewayIPs", func(t *testing.T) {
+		testGatewayAddress(t, testcases, parseLinuxIPv6GatewayIPs)
+	})
+}
+
+func TestParseWindowsIPv6(t *testing.T) {
+	testcases := []ipTestCase{
+		{windowsIPv6, true, "fe80::1", nil},
+		{windowsIPv6NoRoute, false, "", &ErrNoGateway{}},
+	}
+
+	t.Run("parseWindowsIPv6GatewayIPs", func(t *testing.T) {
+		testGatewayAddress(t, testcases, parseWindowsIPv6GatewayIPs)
+	})
+}
+
 func TestParseUnix(t *testing.T) {
 	// Unix route tables are extracted from netstat -rn
 
