@@ -14,6 +14,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 const (
@@ -146,6 +147,28 @@ func parseToWindowsRouteStruct(output []byte) ([]windowsRouteStruct, error) {
 				break
 			}
 			fields := strings.Fields(inputLine)
+			// Some Windows commands are localized, so we need to handle the fields in a logical way.
+			// Basically, fields that start with a number will be treated as-is, but consecutive fields
+			// that start with a letter will be combined into a single field.
+			{
+				var logicalFields []string
+				for f := 0; f < len(fields); f++ {
+					field := fields[f]
+					if len(field) > 0 && unicode.IsLetter(rune(field[0])) {
+						for f+1 < len(fields) {
+							nextField := fields[f+1]
+							if len(nextField) > 0 && unicode.IsLetter(rune(nextField[0])) {
+								field += " " + nextField
+								f++
+							} else {
+								break
+							}
+						}
+					}
+					logicalFields = append(logicalFields, field)
+				}
+				fields = logicalFields
+			}
 			if len(fields) < 5 || !ipRegex.MatchString(fields[0]) {
 				return nil, &ErrCantParse{}
 			}
@@ -263,7 +286,8 @@ func parseWindowsGatewayIPs(output []byte) ([]net.IP, error) {
 
 	result := make([]net.IP, 0, len(parsedOutputs))
 	for _, parsedOutput := range parsedOutputs {
-		if strings.EqualFold(parsedOutput.Gateway, "On-link") {
+		// Skip "On-link" gateways (these will start with a letter; not all languages will print "On-link").
+		if len(parsedOutput.Gateway) > 0 && unicode.IsLetter(rune(parsedOutput.Gateway[0])) {
 			continue
 		}
 		ip := net.ParseIP(parsedOutput.Gateway)
@@ -271,6 +295,9 @@ func parseWindowsGatewayIPs(output []byte) ([]net.IP, error) {
 			return nil, &ErrCantParse{}
 		}
 		result = append(result, ip)
+	}
+	if len(result) == 0 {
+		return nil, &ErrNoGateway{}
 	}
 	return result, nil
 }

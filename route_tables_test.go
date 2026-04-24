@@ -15,11 +15,12 @@ const (
 	netBSD                  = "netBSD"
 	randomData              = "randomData"
 	solarisBadRoute         = "solarisBadRoute"
+	solarisNoInterface      = "solarisNoInterface"
 	solarisNoRoute          = "solarisNoRoute"
 	solaris                 = "solaris"
-	solarisNoInterface      = "solarisNoInterface"
 	windowsBadRoute1        = "windowsBadRoute1"
 	windowsBadRoute2        = "windowsBadRoute2"
+	windowsLocalized2       = "windowsLocalized2"
 	windowsLocalized        = "windowsLocalized"
 	windowsMultipleGateways = "windowsMultipleGateways"
 	windowsNoDefaultRoute   = "windowsNoDefaultRoute"
@@ -196,6 +197,21 @@ Routing Table: IPv6
 fe80::/10                   fe80::6082:52ff:fedc:7df0   U       3    8430 net0
 `),
 
+	solarisNoInterface: []byte(`
+Routing Table: IPv4
+  Destination            Gateway          Flags  Ref     Use     Interface
+-------------------- -------------------- ----- ----- ---------- ---------
+default              172.16.32.1          UG       49  681748414
+127.0.0.1            127.0.0.1            UH        2      52832 lo0
+172.16.32.0          172.16.32.17         U         5    1450483 net0
+
+Routing Table: IPv6
+  Destination/Mask            Gateway                   Flags Ref   Use    If
+--------------------------- --------------------------- ----- --- ------- -----
+::1                         ::1                         UH      2     966 lo0
+fe80::/10                   fe80::aabb:ccdd:1234:2      U       5   77620 net0
+default                     fe80::aabb:ccdd:1234:1      UG      3 4092447`),
+
 	solarisNoRoute: []byte(`
 Routing Table: IPv4
 	Destination           Gateway           Flags  Ref     Use     Interface
@@ -227,22 +243,6 @@ Routing Table: IPv6
 fe80::/10                   fe80::6082:52ff:fedc:7df0   U       3    8430 net0
 `),
 
-	solarisNoInterface: []byte(`
-Routing Table: IPv4
-  Destination            Gateway          Flags  Ref     Use     Interface
--------------------- -------------------- ----- ----- ---------- ---------
-default              172.16.32.1          UG       49  681748414
-127.0.0.1            127.0.0.1            UH        2      52832 lo0
-172.16.32.0          172.16.32.17         U         5    1450483 net0
-
-Routing Table: IPv6
-  Destination/Mask            Gateway                   Flags Ref   Use    If
---------------------------- --------------------------- ----- --- ------- -----
-::1                         ::1                         UH      2     966 lo0
-fe80::/10                   fe80::aabb:ccdd:1234:2      U       5   77620 net0
-default                     fe80::aabb:ccdd:1234:1      UG      3 4092447           
-`),
-
 	windowsBadRoute1: []byte(`
 ===========================================================================
 Interface List
@@ -269,6 +269,37 @@ Network Destination        Netmask          Gateway       Interface  Metric
           0.0.0.0          0.0.0.0          foo           10.88.88.149     10
 ===========================================================================
 Persistent Routes:
+`),
+
+	windowsLocalized2: []byte(`
+===========================================================================
+ILista de interfaces
+29...........................SGNAutobahn Tunnel
+11...........................SGN Tunnel
+18...01 02 03 04 05 60 ......Microsoft Wi-Fi Direct Virtual Adapter
+ 4...01 02 03 04 05 61 ......Microsoft Wi-Fi Direct Virtual Adapter #2
+10...01 02 03 04 05 62 ......MediaTek Wi-Fi 6E MT7902 Wireless LAN Card
+14...01 02 03 04 05 63 ......Bluetooth Device (Personal Area Network)
+ 1...........................Software Loopback Interface 1
+===========================================================================
+ 
+IPv4 Tabla de enrutamiento
+===========================================================================
+Rutas activas:
+Destino de red        Máscara de red   Puerta de enlace   Interfaz  Métrica
+          0.0.0.0          0.0.0.0    192.168.100.1   192.168.100.80     35
+          0.0.0.0        192.0.0.0      En vínculo       123.45.0.10    250
+===========================================================================
+Rutas persistentes:
+  Ninguno
+ 
+IPv6 Tabla de enrutamiento
+===========================================================================
+Rutas activas:
+  Ninguno
+Rutas persistentes:
+  Ninguno
+
 `),
 
 	windowsLocalized: []byte(`
@@ -359,5 +390,9 @@ Network Destination        Netmask          Gateway       Interface  Metric
   127.255.255.255  255.255.255.255         On-link         127.0.0.1    331
 ===========================================================================
 Persistent Routes:
+  Network Address          Netmask  Gateway Address  Metric
+          0.0.0.0          0.0.0.0       10.88.88.2  Default
+    192.168.1.255  255.255.255.255       10.88.88.2       1
+--------------------------------------------------------------------------- 
 `),
 }
