@@ -65,10 +65,11 @@ Pull requests for other OSs happily considered!
 
 ## Versions
 
-### v1.2.0 (unreleased)
+### v1.2.0
 
 + Add IPv6 gateway discovery: `DiscoverGatewayIPv6()`, `DiscoverGatewaysIPv6()`, `DiscoverInterfaceIPv6()`.
   + Supported on Darwin, BSD variants, Linux, Windows, and Solaris/illumos.
+  + **Note**: IPv6 support has been verified on real devices for Linux and Darwin. Other platforms are implemented based on unit tests with synthetic route table data and are considered "best-effort".
 + Deduplicate results from `DiscoverGateways()` and `DiscoverGatewaysIPv6()`.
 
 ### v1.1.2
