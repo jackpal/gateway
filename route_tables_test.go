@@ -12,6 +12,7 @@ const (
 	linux                   = "linux"
 	linuxIPv6               = "linuxIPv6"
 	linuxIPv6NoRoute        = "linuxIPv6NoRoute"
+	solarisIPv6WithInterface = "solarisIPv6WithInterface"
 	netBSDBadRoute          = "netBSDBadRoute"
 	netBSDNoRoute           = "netBSDNoRoute"
 	netBSD                  = "netBSD"
@@ -437,4 +438,12 @@ Active Routes:
 Persistent Routes:
   None
 `),
+
+	solarisIPv6WithInterface: []byte(`
+Routing Table: IPv6
+  Destination/Mask            Gateway                   Flags Ref   Use    If
+--------------------------- --------------------------- ----- --- ------- -----
+::1                         ::1                         UH      2     966 lo0
+fe80::/10                   fe80::aabb:ccdd:1234:2      U       5   77620 net0
+default                     fe80::aabb:ccdd:1234:1      UG      3 4092447 net0`),
 }

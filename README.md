@@ -56,7 +56,7 @@ func main() {
 | Linux            | ✅   | ✅   |
 | NetBSD           | ✅   | ✅   |
 | OpenBSD          | ✅   | ✅   |
-| Solaris / illumos| ✅   | ❌   |
+| Solaris / illumos| ✅   | ✅   |
 | Windows          | ✅   | ✅   |
 
 Other platforms return an error.
@@ -68,7 +68,7 @@ Pull requests for other OSs happily considered!
 ### v1.2.0 (unreleased)
 
 + Add IPv6 gateway discovery: `DiscoverGatewayIPv6()`, `DiscoverGatewaysIPv6()`, `DiscoverInterfaceIPv6()`.
-  + Supported on Darwin, BSD variants, Linux, and Windows.
+  + Supported on Darwin, BSD variants, Linux, Windows, and Solaris/illumos.
 + Deduplicate results from `DiscoverGateways()` and `DiscoverGatewaysIPv6()`.
 
 ### v1.1.2

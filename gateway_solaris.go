@@ -32,9 +32,19 @@ func discoverGatewayInterfaceOSSpecific() (ip net.IP, err error) {
 }
 
 func discoverGatewaysIPv6OSSpecific() (ips []net.IP, err error) {
-	return nil, &ErrNotImplemented{}
+	bytes, err := readNetstat()
+	if err != nil {
+		return nil, err
+	}
+
+	return parseSolarisIPv6GatewayIPs(bytes)
 }
 
 func discoverGatewayInterfaceIPv6OSSpecific() (ip net.IP, err error) {
-	return nil, &ErrNotImplemented{}
+	bytes, err := readNetstat()
+	if err != nil {
+		return nil, err
+	}
+
+	return parseSolarisIPv6InterfaceIP(bytes)
 }

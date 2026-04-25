@@ -52,11 +52,13 @@ type unixRouteStruct struct {
 	Gateway string
 }
 
-func fieldNum(name string, fields []string) int {
+func fieldNum(fields []string, names ...string) int {
 	// Return the zero-based index of given field in slice of field names
 	for num, field := range fields {
-		if name == field {
-			return num
+		for _, name := range names {
+			if name == field {
+				return num
+			}
 		}
 	}
 
@@ -72,18 +74,15 @@ func discoverFields(output []byte) (int, netstatFields) {
 		fields := strings.Fields(line)
 
 		if len(fields) > 3 {
-			d, f, g, netif, iface := fieldNum(ns_destination, fields), fieldNum(ns_flags, fields), fieldNum(ns_gateway, fields), fieldNum(ns_netif, fields), fieldNum(ns_interface, fields)
-			if d >= 0 && f >= 0 && g >= 0 && (netif >= 0 || iface >= 0) {
+			d := fieldNum(fields, ns_destination, "Destination/Mask")
+			f := fieldNum(fields, ns_flags)
+			g := fieldNum(fields, ns_gateway)
+			n := fieldNum(fields, ns_netif, "If", ns_interface)
+			if d >= 0 && f >= 0 && g >= 0 && n >= 0 {
 				nf[ns_destination] = d
 				nf[ns_flags] = f
 				nf[ns_gateway] = g
-				if iface > 0 {
-					// NetBSD
-					nf[ns_netif] = iface
-				} else {
-					// Other BSD/Solaris/Darwin
-					nf[ns_netif] = netif
-				}
+				nf[ns_netif] = n
 
 				return lineNo, nf
 			}
@@ -775,7 +774,10 @@ func parseNetstatToRouteStruct(output []byte) ([]unixRouteStruct, error) {
 
 		if len(fields) < 4 {
 			// past route entries (got to end or blank line prior to ip6 entries)
-			break
+			if len(result) > 0 {
+				break
+			}
+			continue
 		}
 
 		if fields[nsFields[ns_destination]] == "default" && flagsContain(fields[nsFields[ns_flags]], "U", "G") {
@@ -794,3 +796,47 @@ func parseNetstatToRouteStruct(output []byte) ([]unixRouteStruct, error) {
 	}
 	return result, nil
 }
+
+func parseSolarisIPv6GatewayIPs(output []byte) ([]net.IP, error) {
+	// Solaris netstat -rn output has a section "Routing Table: IPv6"
+	idx := bytes.Index(output, []byte("Routing Table: IPv6"))
+	if idx != -1 {
+		output = output[idx:]
+	}
+
+	parsedStructs, err := parseNetstatToRouteStruct(output)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]net.IP, 0, len(parsedStructs))
+	for _, parsedStruct := range parsedStructs {
+		ip := net.ParseIP(parsedStruct.Gateway)
+		if ip != nil {
+			result = append(result, ip)
+		}
+	}
+	if len(result) == 0 {
+		return nil, &ErrNoGateway{}
+	}
+	return result, nil
+}
+
+func parseSolarisIPv6InterfaceIP(output []byte) (net.IP, error) {
+	return parseSolarisIPv6InterfaceIPImpl(output, &intefaceGetterImpl{})
+}
+
+func parseSolarisIPv6InterfaceIPImpl(output []byte, ifaceGetter interfaceGetter) (net.IP, error) {
+	idx := bytes.Index(output, []byte("Routing Table: IPv6"))
+	if idx != -1 {
+		output = output[idx:]
+	}
+
+	parsedStructs, err := parseNetstatToRouteStruct(output)
+	if err != nil {
+		return nil, err
+	}
+
+	return getInterfaceIP6(parsedStructs[0].Iface, ifaceGetter)
+}
+

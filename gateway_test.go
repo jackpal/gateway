@@ -136,6 +136,26 @@ func TestParseWindowsIPv6(t *testing.T) {
 	})
 }
 
+func TestParseSolarisIPv6(t *testing.T) {
+	testcases := []ipTestCase{
+		{solarisNoInterface, true, "fe80::aabb:ccdd:1234:1", nil},
+		{solarisNoRoute, false, "", &ErrNoGateway{}},
+	}
+
+	t.Run("parseSolarisIPv6GatewayIPs", func(t *testing.T) {
+		testGatewayAddress(t, testcases, parseSolarisIPv6GatewayIPs)
+	})
+
+	interfaceTestCases := []ifaceTestCase{
+		{solarisIPv6WithInterface, "net0", true, "2001:db8::1", nil},
+		{solarisNoRoute, "net0", false, "", &ErrNoGateway{}},
+	}
+
+	t.Run("parseSolarisIPv6InterfaceIP", func(t *testing.T) {
+		testInterfaceAddress(t, interfaceTestCases, parseSolarisIPv6InterfaceIPImpl)
+	})
+}
+
 func TestParseUnix(t *testing.T) {
 	// Unix route tables are extracted from netstat -rn
 
