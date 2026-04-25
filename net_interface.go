@@ -5,6 +5,7 @@ import "net"
 // Wrapper for calls into the go "net" library that can be mocked for tests
 type interfaceGetter interface {
 	InterfaceByName(name string) (*net.Interface, error)
+	InterfaceByIndex(index int) (*net.Interface, error)
 	Addrs(iface *net.Interface) ([]net.Addr, error)
 }
 
@@ -13,6 +14,10 @@ type intefaceGetterImpl struct{}
 
 func (*intefaceGetterImpl) InterfaceByName(name string) (*net.Interface, error) {
 	return net.InterfaceByName(name)
+}
+
+func (*intefaceGetterImpl) InterfaceByIndex(index int) (*net.Interface, error) {
+	return net.InterfaceByIndex(index)
 }
 
 func (*intefaceGetterImpl) Addrs(iface *net.Interface) ([]net.Addr, error) {

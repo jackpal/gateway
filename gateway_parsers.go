@@ -395,6 +395,95 @@ func parseWindowsIPv6GatewayIPs(output []byte) ([]net.IP, error) {
 	return result, nil
 }
 
+func parseWindowsIPv6InterfaceIP(output []byte) (net.IP, error) {
+	return parseWindowsIPv6InterfaceIPImpl(output, &intefaceGetterImpl{})
+}
+
+func parseWindowsIPv6InterfaceIPImpl(output []byte, ifaceGetter interfaceGetter) (net.IP, error) {
+	// Parse the Windows IPv6 route table to find the interface index
+	// for the default route (::/0), then resolve it to an IPv6 address.
+	lines := strings.Split(string(output), "\n")
+	inActiveRoutes := false
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+
+		if strings.HasPrefix(line, "Active Routes:") || strings.HasPrefix(line, "Rutas activas:") {
+			inActiveRoutes = true
+			continue
+		}
+
+		if !inActiveRoutes {
+			continue
+		}
+
+		if strings.HasPrefix(line, "====") || strings.HasPrefix(line, "Persistent") || strings.HasPrefix(line, "Rutas persistentes") || line == "" {
+			continue
+		}
+
+		if strings.HasPrefix(line, "If") {
+			continue
+		}
+
+		fields := strings.Fields(line)
+		if len(fields) < 4 {
+			continue
+		}
+
+		// Fields: If, Metric, Network Destination, Gateway
+		ifIndex := fields[0]
+		dest := fields[2]
+
+		if dest != "::/0" {
+			continue
+		}
+
+		// Parse the interface index
+		idx, err := strconv.Atoi(ifIndex)
+		if err != nil {
+			continue
+		}
+
+		// Look up the interface by index
+		iface, err := ifaceGetter.InterfaceByIndex(idx)
+		if err != nil {
+			return nil, err
+		}
+
+		addrs, err := ifaceGetter.Addrs(iface)
+		if err != nil {
+			return nil, err
+		}
+
+		// Find an IPv6 address on this interface, preferring global over link-local
+		var linkLocal net.IP
+		for _, addr := range addrs {
+			ipnet, ok := addr.(*net.IPNet)
+			if !ok {
+				continue
+			}
+			if ipnet.IP.To4() != nil {
+				continue
+			}
+			ip := ipnet.IP.To16()
+			if ip == nil {
+				continue
+			}
+			if !ip.IsLinkLocalUnicast() {
+				return ip, nil
+			}
+			if linkLocal == nil {
+				linkLocal = ip
+			}
+		}
+		if linkLocal != nil {
+			return linkLocal, nil
+		}
+	}
+
+	return nil, &ErrNoGateway{}
+}
+
 func parseLinuxGatewayIPs(output []byte) ([]net.IP, error) {
 	parsedStructs, err := parseToLinuxRouteStructs(output)
 	if err != nil {

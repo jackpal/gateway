@@ -79,6 +79,64 @@ func (_c *mockinterfaceGetter_Addrs_Call) RunAndReturn(run func(*net.Interface) 
 	return _c
 }
 
+// InterfaceByIndex provides a mock function with given fields: index
+func (_m *mockinterfaceGetter) InterfaceByIndex(index int) (*net.Interface, error) {
+	ret := _m.Called(index)
+
+	if len(ret) == 0 {
+		panic("no return value specified for InterfaceByIndex")
+	}
+
+	var r0 *net.Interface
+	var r1 error
+	if rf, ok := ret.Get(0).(func(int) (*net.Interface, error)); ok {
+		return rf(index)
+	}
+	if rf, ok := ret.Get(0).(func(int) *net.Interface); ok {
+		r0 = rf(index)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*net.Interface)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(int) error); ok {
+		r1 = rf(index)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// mockinterfaceGetter_InterfaceByIndex_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InterfaceByIndex'
+type mockinterfaceGetter_InterfaceByIndex_Call struct {
+	*mock.Call
+}
+
+// InterfaceByIndex is a helper method to define mock.On call
+//   - index int
+func (_e *mockinterfaceGetter_Expecter) InterfaceByIndex(index interface{}) *mockinterfaceGetter_InterfaceByIndex_Call {
+	return &mockinterfaceGetter_InterfaceByIndex_Call{Call: _e.mock.On("InterfaceByIndex", index)}
+}
+
+func (_c *mockinterfaceGetter_InterfaceByIndex_Call) Run(run func(index int)) *mockinterfaceGetter_InterfaceByIndex_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(int))
+	})
+	return _c
+}
+
+func (_c *mockinterfaceGetter_InterfaceByIndex_Call) Return(_a0 *net.Interface, _a1 error) *mockinterfaceGetter_InterfaceByIndex_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *mockinterfaceGetter_InterfaceByIndex_Call) RunAndReturn(run func(int) (*net.Interface, error)) *mockinterfaceGetter_InterfaceByIndex_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // InterfaceByName provides a mock function with given fields: name
 func (_m *mockinterfaceGetter) InterfaceByName(name string) (*net.Interface, error) {
 	ret := _m.Called(name)
