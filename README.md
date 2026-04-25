@@ -2,7 +2,9 @@
 
 A simple library for discovering the IP address of the default gateway.
 
-Example:
+Supports both IPv4 and IPv6.
+
+### IPv4 Example
 
 ```go
 package main
@@ -14,31 +16,60 @@ import (
 )
 
 func main() {
-    gateway, err := gateway.DiscoverGateway()
+    gw, err := gateway.DiscoverGateway()
     if err != nil {
         fmt.Println(err)
     } else {
-        fmt.Println("Gateway:", gateway.String())
+        fmt.Println("IPv4 Gateway:", gw.String())
    }
 }
 ```
 
-Provides implementations for:
+### IPv6 Example
 
-+ Darwin (macOS)
-+ Dragonfly
-+ FreeBSD
-+ Linux
-+ NetBSD
-+ OpenBSD
-+ Solaris and illumos
-+ Windows
+```go
+package main
 
-Other platforms use an implementation that always returns an error.
+import (
+    "fmt"
+
+    "github.com/jackpal/gateway"
+)
+
+func main() {
+    gw, err := gateway.DiscoverGatewayIPv6()
+    if err != nil {
+        fmt.Println(err)
+    } else {
+        fmt.Println("IPv6 Gateway:", gw.String())
+   }
+}
+```
+
+### IPv4 and IPv6 Platform Support
+
+| Platform         | IPv4 | IPv6 |
+|------------------|------|------|
+| Darwin (macOS)   | ✅   | ✅   |
+| Dragonfly        | ✅   | ✅   |
+| FreeBSD          | ✅   | ✅   |
+| Linux            | ✅   | ✅   |
+| NetBSD           | ✅   | ✅   |
+| OpenBSD          | ✅   | ✅   |
+| Solaris / illumos| ✅   | ❌   |
+| Windows          | ✅   | ✅   |
+
+Other platforms return an error.
 
 Pull requests for other OSs happily considered!
 
 ## Versions
+
+### v1.2.0 (unreleased)
+
++ Add IPv6 gateway discovery: `DiscoverGatewayIPv6()`, `DiscoverGatewaysIPv6()`, `DiscoverInterfaceIPv6()`.
+  + Supported on Darwin, BSD variants, Linux, and Windows.
++ Deduplicate results from `DiscoverGateways()` and `DiscoverGatewaysIPv6()`.
 
 ### v1.1.2
 
