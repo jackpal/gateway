@@ -4,6 +4,8 @@ A simple library for discovering the IP address of the default gateway.
 
 Supports both IPv4 and IPv6.
 
+> **Maintenance status:** ✅ Maintained (stable). This library is feature-complete — I accept bug fixes and security patches, but am not adding new features. See [SECURITY.md](SECURITY.md) for how to report vulnerabilities.
+
 ### IPv4 Example
 
 ```go
