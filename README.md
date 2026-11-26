@@ -67,6 +67,10 @@ Pull requests for other OSs happily considered!
 
 ## Versions
 
+### v1.2.2
+
++ Linux: fall back to Netlink (`RTM_GETROUTE`) when `/proc/net/route` or `/proc/net/ipv6_route` is unreadable (addresses #52).
+
 ### v1.2.1
 
 + Update `golang.org/x/net` dependency to v0.63.0 (clears Dependabot alert for CVE-2026-25680).

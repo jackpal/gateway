@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"syscall"
 )
 
 const (
@@ -47,33 +48,65 @@ func readRoutesIPv6() ([]byte, error) {
 }
 
 func discoverGatewaysOSSpecific() (ips []net.IP, err error) {
-	bytes, err := readRoutes()
-	if err != nil {
-		return nil, err
+	bytes, procErr := readRoutes()
+	if procErr == nil {
+		return parseLinuxGatewayIPs(bytes)
 	}
-	return parseLinuxGatewayIPs(bytes)
+	rib, nlErr := syscall.NetlinkRIB(syscall.RTM_GETROUTE, syscall.AF_INET)
+	if nlErr != nil {
+		return nil, procErr
+	}
+	ips, nlErr = parseLinuxNetlinkGatewayIPs(rib)
+	if nlErr != nil {
+		return nil, procErr
+	}
+	return ips, nil
 }
 
 func discoverGatewayInterfaceOSSpecific() (ip net.IP, err error) {
-	bytes, err := readRoutes()
-	if err != nil {
-		return nil, err
+	bytes, procErr := readRoutes()
+	if procErr == nil {
+		return parseLinuxInterfaceIP(bytes)
 	}
-	return parseLinuxInterfaceIP(bytes)
+	rib, nlErr := syscall.NetlinkRIB(syscall.RTM_GETROUTE, syscall.AF_INET)
+	if nlErr != nil {
+		return nil, procErr
+	}
+	ip, nlErr = parseLinuxNetlinkInterfaceIP(rib)
+	if nlErr != nil {
+		return nil, procErr
+	}
+	return ip, nil
 }
 
 func discoverGatewaysIPv6OSSpecific() (ips []net.IP, err error) {
-	bytes, err := readRoutesIPv6()
-	if err != nil {
-		return nil, err
+	bytes, procErr := readRoutesIPv6()
+	if procErr == nil {
+		return parseLinuxIPv6GatewayIPs(bytes)
 	}
-	return parseLinuxIPv6GatewayIPs(bytes)
+	rib, nlErr := syscall.NetlinkRIB(syscall.RTM_GETROUTE, syscall.AF_INET6)
+	if nlErr != nil {
+		return nil, procErr
+	}
+	ips, nlErr = parseLinuxNetlinkIPv6GatewayIPs(rib)
+	if nlErr != nil {
+		return nil, procErr
+	}
+	return ips, nil
 }
 
 func discoverGatewayInterfaceIPv6OSSpecific() (ip net.IP, err error) {
-	bytes, err := readRoutesIPv6()
-	if err != nil {
-		return nil, err
+	bytes, procErr := readRoutesIPv6()
+	if procErr == nil {
+		return parseLinuxIPv6InterfaceIP(bytes)
 	}
-	return parseLinuxIPv6InterfaceIP(bytes)
+	rib, nlErr := syscall.NetlinkRIB(syscall.RTM_GETROUTE, syscall.AF_INET6)
+	if nlErr != nil {
+		return nil, procErr
+	}
+	ip, nlErr = parseLinuxNetlinkIPv6InterfaceIP(rib)
+	if nlErr != nil {
+		return nil, procErr
+	}
+	return ip, nil
 }

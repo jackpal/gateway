@@ -7,6 +7,7 @@ package gateway
 import (
 	"bufio"
 	"bytes"
+	"cmp"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
@@ -646,7 +647,22 @@ func getInterfaceIP4(name string, ifaceGetter interfaceGetter) (net.IP, error) {
 	if err != nil {
 		return nil, err
 	}
+	return findInterfaceIP4(iface, name, ifaceGetter)
+}
 
+func getInterfaceIP4ByIndex(index int, ifaceGetter interfaceGetter) (net.IP, error) {
+	iface, err := ifaceGetter.InterfaceByIndex(index)
+	if err != nil {
+		return nil, err
+	}
+	label := any(index)
+	if iface.Name != "" {
+		label = iface.Name
+	}
+	return findInterfaceIP4(iface, label, ifaceGetter)
+}
+
+func findInterfaceIP4(iface *net.Interface, label any, ifaceGetter interfaceGetter) (net.IP, error) {
 	addrs, err := ifaceGetter.Addrs(iface)
 	if err != nil {
 		return nil, err
@@ -664,8 +680,7 @@ func getInterfaceIP4(name string, ifaceGetter interfaceGetter) (net.IP, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("no IPv4 address found for interface %v",
-		name)
+	return nil, fmt.Errorf("no IPv4 address found for interface %v", label)
 }
 
 func parseUnixInterfaceIPv6(output []byte) (net.IP, error) {
@@ -690,12 +705,28 @@ func getInterfaceIP6(name string, ifaceGetter interfaceGetter) (net.IP, error) {
 	if err != nil {
 		return nil, err
 	}
+	return findInterfaceIP6(iface, name, ifaceGetter)
+}
 
+func getInterfaceIP6ByIndex(index int, ifaceGetter interfaceGetter) (net.IP, error) {
+	iface, err := ifaceGetter.InterfaceByIndex(index)
+	if err != nil {
+		return nil, err
+	}
+	label := any(index)
+	if iface.Name != "" {
+		label = iface.Name
+	}
+	return findInterfaceIP6(iface, label, ifaceGetter)
+}
+
+func findInterfaceIP6(iface *net.Interface, label any, ifaceGetter interfaceGetter) (net.IP, error) {
 	addrs, err := ifaceGetter.Addrs(iface)
 	if err != nil {
 		return nil, err
 	}
 
+	var linkLocal net.IP
 	for _, addr := range addrs {
 		ipnet, ok := addr.(*net.IPNet)
 		if !ok {
@@ -708,30 +739,23 @@ func getInterfaceIP6(name string, ifaceGetter interfaceGetter) (net.IP, error) {
 		}
 
 		ip := ipnet.IP.To16()
-		if ip != nil && !ip.IsLinkLocalUnicast() {
+		if ip == nil {
+			continue
+		}
+		if !ip.IsLinkLocalUnicast() {
 			return ip, nil
+		}
+		if linkLocal == nil {
+			linkLocal = ip
 		}
 	}
 
 	// Fall back to link-local if no global address found
-	for _, addr := range addrs {
-		ipnet, ok := addr.(*net.IPNet)
-		if !ok {
-			continue
-		}
-
-		if ipnet.IP.To4() != nil {
-			continue
-		}
-
-		ip := ipnet.IP.To16()
-		if ip != nil {
-			return ip, nil
-		}
+	if linkLocal != nil {
+		return linkLocal, nil
 	}
 
-	return nil, fmt.Errorf("no IPv6 address found for interface %v",
-		name)
+	return nil, fmt.Errorf("no IPv6 address found for interface %v", label)
 }
 
 func parseUnixGatewayIPs(output []byte) ([]net.IP, error) {
@@ -838,5 +862,226 @@ func parseSolarisIPv6InterfaceIPImpl(output []byte, ifaceGetter interfaceGetter)
 	}
 
 	return getInterfaceIP6(parsedStructs[0].Iface, ifaceGetter)
+}
+
+// Linux Netlink UAPI constants (endian-independent wire format without unsafe).
+const (
+	nlmsgHdrLen   = 16
+	nlmsgError    = 2
+	nlmsgDone     = 3
+	rtmNewRoute   = 24
+	rtMsgLen      = 12
+	rtAttrHdrLen  = 4
+	nlAFInet      = 2
+	nlAFInet6     = 10
+	rtTableUnspec = 0
+	rtTableMain   = 254
+	rtnUnicast    = 1
+	rtaDst        = 1
+	rtaOif        = 4
+	rtaGateway    = 5
+	rtaPriority   = 6
+	rtaTable      = 15
+)
+
+type linuxNetlinkRoute struct {
+	Gateway  net.IP
+	OifIndex int
+	Priority uint32
+}
+
+func nlAlign4(n int) int {
+	return (n + 3) &^ 3
+}
+
+// parseLinuxNetlinkDefaultRoutes extracts default gateway routes from a Linux
+// RTM_GETROUTE Netlink RIB dump, sorted ascending by route metric (RTA_PRIORITY).
+func parseLinuxNetlinkDefaultRoutes(rib []byte, family uint8) ([]linuxNetlinkRoute, error) {
+	var ipLen int
+	switch family {
+	case nlAFInet:
+		ipLen = net.IPv4len
+	case nlAFInet6:
+		ipLen = net.IPv6len
+	default:
+		return nil, &ErrCantParse{}
+	}
+
+	var routes []linuxNetlinkRoute
+	b := rib
+	for len(b) >= nlmsgHdrLen {
+		msgLen := int(binary.NativeEndian.Uint32(b[0:4]))
+		msgType := binary.NativeEndian.Uint16(b[4:6])
+		if msgLen < nlmsgHdrLen || msgLen > len(b) {
+			return nil, &ErrCantParse{}
+		}
+		data := b[nlmsgHdrLen:msgLen]
+		aligned := nlAlign4(msgLen)
+		if aligned >= len(b) {
+			b = nil
+		} else {
+			b = b[aligned:]
+		}
+
+		if msgType == nlmsgDone {
+			break
+		}
+		if msgType == nlmsgError {
+			return nil, &ErrCantParse{}
+		}
+		if msgType != rtmNewRoute {
+			continue
+		}
+		if len(data) < rtMsgLen {
+			return nil, &ErrCantParse{}
+		}
+
+		rtFamily := data[0]
+		dstLen := data[1]
+		table := uint32(data[4])
+		rtType := data[7]
+		if rtFamily != family || dstLen != 0 || rtType != rtnUnicast {
+			continue
+		}
+
+		var (
+			gateway    net.IP
+			oifIndex   int
+			priority   uint32
+			nonZeroDst bool
+		)
+
+		ab := data[rtMsgLen:]
+		for len(ab) >= rtAttrHdrLen {
+			attrLen := int(binary.NativeEndian.Uint16(ab[0:2]))
+			attrType := binary.NativeEndian.Uint16(ab[2:4]) & 0x3fff
+			if attrLen < rtAttrHdrLen || attrLen > len(ab) {
+				return nil, &ErrCantParse{}
+			}
+			val := ab[rtAttrHdrLen:attrLen]
+			aAligned := nlAlign4(attrLen)
+			if aAligned >= len(ab) {
+				ab = nil
+			} else {
+				ab = ab[aAligned:]
+			}
+
+			switch attrType {
+			case rtaTable:
+				if len(val) == 4 {
+					table = binary.NativeEndian.Uint32(val)
+				}
+			case rtaDst:
+				for _, v := range val {
+					if v != 0 {
+						nonZeroDst = true
+						break
+					}
+				}
+			case rtaGateway:
+				if len(val) == ipLen {
+					gateway = make(net.IP, ipLen)
+					copy(gateway, val)
+				}
+			case rtaOif:
+				if len(val) == 4 {
+					oifIndex = int(binary.NativeEndian.Uint32(val))
+				}
+			case rtaPriority:
+				if len(val) == 4 {
+					priority = binary.NativeEndian.Uint32(val)
+				}
+			}
+		}
+		if len(ab) > 0 {
+			return nil, &ErrCantParse{}
+		}
+
+		if table != rtTableMain || nonZeroDst {
+			continue
+		}
+		if gateway == nil || (family == nlAFInet6 && gateway.IsUnspecified()) {
+			continue
+		}
+
+		routes = append(routes, linuxNetlinkRoute{
+			Gateway:  gateway,
+			OifIndex: oifIndex,
+			Priority: priority,
+		})
+	}
+	if len(b) > 0 {
+		return nil, &ErrCantParse{}
+	}
+
+	if len(routes) == 0 {
+		return nil, &ErrNoGateway{}
+	}
+
+	slices.SortStableFunc(routes, func(a, b linuxNetlinkRoute) int {
+		return cmp.Compare(a.Priority, b.Priority)
+	})
+
+	return routes, nil
+}
+
+func parseLinuxNetlinkGatewayIPsByFamily(rib []byte, family uint8) ([]net.IP, error) {
+	routes, err := parseLinuxNetlinkDefaultRoutes(rib, family)
+	if err != nil {
+		return nil, err
+	}
+
+	seen := make(map[string]bool, len(routes))
+	result := make([]net.IP, 0, len(routes))
+	for _, r := range routes {
+		key := r.Gateway.String()
+		if !seen[key] {
+			seen[key] = true
+			result = append(result, r.Gateway)
+		}
+	}
+	return result, nil
+}
+
+func parseLinuxNetlinkGatewayIPs(rib []byte) ([]net.IP, error) {
+	return parseLinuxNetlinkGatewayIPsByFamily(rib, nlAFInet)
+}
+
+func parseLinuxNetlinkIPv6GatewayIPs(rib []byte) ([]net.IP, error) {
+	return parseLinuxNetlinkGatewayIPsByFamily(rib, nlAFInet6)
+}
+
+func parseLinuxNetlinkInterfaceIP(rib []byte) (net.IP, error) {
+	return parseLinuxNetlinkInterfaceIPImpl(rib, &intefaceGetterImpl{})
+}
+
+func parseLinuxNetlinkInterfaceIPImpl(rib []byte, ifaceGetter interfaceGetter) (net.IP, error) {
+	routes, err := parseLinuxNetlinkDefaultRoutes(rib, nlAFInet)
+	if err != nil {
+		return nil, err
+	}
+	for _, r := range routes {
+		if r.OifIndex > 0 {
+			return getInterfaceIP4ByIndex(r.OifIndex, ifaceGetter)
+		}
+	}
+	return nil, &ErrNoGateway{}
+}
+
+func parseLinuxNetlinkIPv6InterfaceIP(rib []byte) (net.IP, error) {
+	return parseLinuxNetlinkIPv6InterfaceIPImpl(rib, &intefaceGetterImpl{})
+}
+
+func parseLinuxNetlinkIPv6InterfaceIPImpl(rib []byte, ifaceGetter interfaceGetter) (net.IP, error) {
+	routes, err := parseLinuxNetlinkDefaultRoutes(rib, nlAFInet6)
+	if err != nil {
+		return nil, err
+	}
+	for _, r := range routes {
+		if r.OifIndex > 0 {
+			return getInterfaceIP6ByIndex(r.OifIndex, ifaceGetter)
+		}
+	}
+	return nil, &ErrNoGateway{}
 }
 
