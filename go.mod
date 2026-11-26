@@ -1,10 +1,10 @@
 module github.com/jackpal/gateway
 
-go 1.26.2
+go 1.26.0
 
 require (
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/net v0.50.0
+	golang.org/x/net v0.63.0
 )
 
 require (

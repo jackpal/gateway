@@ -67,6 +67,10 @@ Pull requests for other OSs happily considered!
 
 ## Versions
 
+### v1.2.1
+
++ Update `golang.org/x/net` dependency to v0.63.0 (clears Dependabot alert for CVE-2026-25680).
+
 ### v1.2.0
 
 + Add IPv6 gateway discovery: `DiscoverGatewayIPv6()`, `DiscoverGatewaysIPv6()`, `DiscoverInterfaceIPv6()`.
